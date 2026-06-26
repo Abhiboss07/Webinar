@@ -15,8 +15,12 @@
  *
  * SETUP:
  * 1. Sheet → Extensions → Apps Script → paste THIS file.
- * 2. Project Settings → Script properties → add SHEET_SHARED_TOKEN (must match
- *    the backend's SHEET_SHARED_TOKEN env var).
+ * 2. Project Settings → Script properties → "Add script property":
+ *      Property:  SHEET_SHARED_TOKEN
+ *      Value:     <the EXACT same secret as the backend .env SHEET_SHARED_TOKEN>
+ *    This is a secret YOU generate (e.g. awish_super_secret_2026_xxxxx). It is NOT
+ *    the deployment ID and NOT the web-app URL — it must byte-for-byte match the
+ *    backend env var, or every write (register / markPaid) is rejected as Unauthorized.
  * 3. Deploy → New deployment → Web app → Execute as: Me, Access: Anyone.
  * 4. Put the Web app URL in the backend's GOOGLE_SHEET_ENDPOINT.
  *    (The browser uses it too — read-only — via config/workshop-config.js integrations.sheetsEndpoint.)

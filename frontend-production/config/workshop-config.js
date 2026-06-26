@@ -53,7 +53,7 @@ const WORKSHOP_CONFIG = {
      on localhost and `prod` everywhere else — no hardcoded URLs elsewhere. */
   api: {
     dev: "http://localhost:4000",
-    prod: "https://youngness-backend.onrender.com", // ← your deployed Render URL
+    prod: "https://webinar-jbgr.onrender.com", // ← your deployed Render URL
   },
 
   /* ------------------------------------------------------- INTEGRATIONS */
