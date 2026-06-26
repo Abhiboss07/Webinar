@@ -65,7 +65,8 @@ const WORKSHOP_CONFIG = {
     // WhatsApp business number for the post-registration redirect (no "+").
     whatsappNumber: "919310032619",
     // Set true to log diagnostics in the console (leave false in production).
-    debug: false,
+    // TEMP: enabled to debug the registration/payment flow — set back to false after verifying.
+    debug: true,
   },
 
   /* ----------------------------------------------------------- PAYMENT -----

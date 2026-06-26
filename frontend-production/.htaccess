@@ -37,28 +37,35 @@ AddDefaultCharset UTF-8
 </IfModule>
 
 # ---------------------------------------------------------------------------
-# Caching — long-lived for fingerprint-free static assets; HTML always fresh.
+# Caching. IMPORTANT: the JS/CSS/config filenames are NOT content-hashed and DO
+# change between deploys (e.g. config/workshop-config.js → api.prod backend URL).
+# So app code MUST revalidate every load — otherwise a re-upload won't take effect
+# until the browser cache expires. Only media gets a short cache (not immutable).
 # ---------------------------------------------------------------------------
 <IfModule mod_expires.c>
   ExpiresActive On
-  ExpiresByType text/css             "access plus 1 year"
-  ExpiresByType text/javascript      "access plus 1 year"
-  ExpiresByType application/javascript "access plus 1 year"
-  ExpiresByType image/jpeg           "access plus 1 year"
-  ExpiresByType image/png            "access plus 1 year"
-  ExpiresByType image/webp           "access plus 1 year"
-  ExpiresByType image/svg+xml        "access plus 1 year"
-  ExpiresByType image/x-icon         "access plus 1 year"
-  ExpiresByType font/woff2           "access plus 1 year"
-  ExpiresByType text/html            "access plus 0 seconds"
+  # App code + HTML: always revalidate so deploys / config changes apply immediately.
+  ExpiresByType text/css               "access plus 0 seconds"
+  ExpiresByType text/javascript        "access plus 0 seconds"
+  ExpiresByType application/javascript "access plus 0 seconds"
+  ExpiresByType text/html              "access plus 0 seconds"
+  # Media: cache a day (rename the file for an instant cache-bust if needed).
+  ExpiresByType image/jpeg             "access plus 1 day"
+  ExpiresByType image/png              "access plus 1 day"
+  ExpiresByType image/webp             "access plus 1 day"
+  ExpiresByType image/svg+xml          "access plus 1 day"
+  ExpiresByType image/x-icon           "access plus 1 week"
+  ExpiresByType font/woff2             "access plus 1 week"
 </IfModule>
 
 <IfModule mod_headers.c>
-  <FilesMatch "\.(css|js|mjs|jpg|jpeg|png|webp|svg|ico|woff2)$">
-    Header set Cache-Control "public, max-age=31536000, immutable"
-  </FilesMatch>
-  <FilesMatch "\.html$">
+  # App code (HTML/JS/CSS/config): never cache stale — always revalidate (304 if unchanged).
+  <FilesMatch "\.(html|js|mjs|css)$">
     Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  # Static media: cacheable but NOT immutable, so a re-upload propagates within a day.
+  <FilesMatch "\.(jpg|jpeg|png|webp|svg|ico|woff2)$">
+    Header set Cache-Control "public, max-age=86400"
   </FilesMatch>
 
   # --- Safe security headers (do NOT break Razorpay / Google Fonts) ---

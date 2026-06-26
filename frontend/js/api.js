@@ -5,6 +5,10 @@
    ========================================================================== */
 import { C } from "./config.js";
 
+// TEMP DEBUG — logs are emitted only when config.integrations.debug === true.
+// Set integrations.debug back to false once the flow is verified.
+const dbg = (...a) => { if (C.integrations && C.integrations.debug) console.log("[api]", ...a); };
+
 // Resolve the backend base URL for the current environment.
 export function apiBase() {
   const api = C.api || {};
@@ -18,18 +22,22 @@ export function apiBase() {
 export class NetworkError extends Error {}
 
 async function postJSON(path, body) {
+  const url = apiBase() + path;
+  dbg("→ request", { method: "POST", url, body });
   let res;
   try {
-    res = await fetch(apiBase() + path, {
+    res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body || {}),
     });
-  } catch (_) {
+  } catch (err) {
+    dbg("✗ network/CORS failure", { url, error: err && err.message });
     throw new NetworkError("Network error — please check your connection and try again.");
   }
   let json = null;
   try { json = await res.json(); } catch (_) { /* non-JSON */ }
+  dbg("← response", { url, status: res.status, ok: res.ok, json });
   if (!res.ok) throw new Error((json && json.message) || `Request failed (${res.status})`);
   return json || {};
 }

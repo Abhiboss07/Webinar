@@ -92,7 +92,7 @@ export function initForm() {
       resetSubmitBtn();
       goToPayment(); // open the payment step immediately
     } catch (err) {
-      console.error("[registration] save failed:", err);
+      console.error("[registration] save failed:", (err && (err.message || String(err))) || "unknown error", err);
       const network = err instanceof NetworkError;
       const msg = network
         ? `Network error — please check your connection and try again, or WhatsApp us at ${C.footer.contact.phone}.`
