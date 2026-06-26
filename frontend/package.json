@@ -1,0 +1,15 @@
+{
+  "name": "youngness-workshop-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static workshop registration site (Hostinger). Tailwind is compiled to css/main.css — the deployed site needs no build step, just the static files.",
+  "scripts": {
+    "build:css": "tailwindcss -i src/input.css -o css/main.css --minify",
+    "watch:css": "tailwindcss -i src/input.css -o css/main.css --watch",
+    "serve": "python3 -m http.server 5173"
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.7",
+    "tailwindcss": "^3.4.17"
+  }
+}

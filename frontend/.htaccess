@@ -1,0 +1,81 @@
+# ============================================================================
+# Youngness Workshop — production .htaccess for Hostinger (Apache, shared)
+# Upload the CONTENTS of frontend-production/ into your /workshop/ directory.
+# Pure static site: HTML + compiled CSS + ES-module JS. No Node, no rewrites.
+# ============================================================================
+
+# Serve index.html for the /workshop/ directory.
+DirectoryIndex index.html
+
+# Don't expose a directory listing if index.html is ever missing.
+Options -Indexes
+
+# Default charset.
+AddDefaultCharset UTF-8
+
+# ---------------------------------------------------------------------------
+# CRITICAL — correct MIME types. ES modules FAIL to load if .js is served as
+# text/plain ("Expected a JavaScript module script..."). This is the #1 cause
+# of a blank page for module-based static sites on shared hosting.
+# ---------------------------------------------------------------------------
+<IfModule mod_mime.c>
+  AddType text/javascript            .js
+  AddType text/javascript            .mjs
+  AddType text/css                   .css
+  AddType image/svg+xml              .svg
+  AddType image/x-icon               .ico
+  AddType image/webp                 .webp
+  AddType application/json           .json
+  AddType font/woff2                 .woff2
+</IfModule>
+
+# ---------------------------------------------------------------------------
+# Compression (gzip).
+# ---------------------------------------------------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml
+</IfModule>
+
+# ---------------------------------------------------------------------------
+# Caching — long-lived for fingerprint-free static assets; HTML always fresh.
+# ---------------------------------------------------------------------------
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css             "access plus 1 year"
+  ExpiresByType text/javascript      "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType image/jpeg           "access plus 1 year"
+  ExpiresByType image/png            "access plus 1 year"
+  ExpiresByType image/webp           "access plus 1 year"
+  ExpiresByType image/svg+xml        "access plus 1 year"
+  ExpiresByType image/x-icon         "access plus 1 year"
+  ExpiresByType font/woff2           "access plus 1 year"
+  ExpiresByType text/html            "access plus 0 seconds"
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(css|js|mjs|jpg|jpeg|png|webp|svg|ico|woff2)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+
+  # --- Safe security headers (do NOT break Razorpay / Google Fonts) ---
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+
+  # --- OPTIONAL Content-Security-Policy (commented: enable + set <RENDER_URL>) ---
+  # A strict CSP can break Razorpay/fonts if mis-set. If you enable it, replace
+  # https://YOUR-BACKEND.onrender.com with your real Render URL.
+  # Header always set Content-Security-Policy "default-src 'self'; \
+  #   script-src 'self' https://checkout.razorpay.com; \
+  #   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; \
+  #   font-src 'self' https://fonts.gstatic.com; \
+  #   img-src 'self' data: https:; \
+  #   connect-src 'self' https://YOUR-BACKEND.onrender.com https://*.razorpay.com https://lumberjack.razorpay.com; \
+  #   frame-src https://*.razorpay.com https://api.razorpay.com; \
+  #   object-src 'none'; base-uri 'self'"
+</IfModule>

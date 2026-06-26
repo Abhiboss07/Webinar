@@ -1,0 +1,17 @@
+# Dependencies (regenerated via `npm install`)
+node_modules/
+
+# Secrets — NEVER commit real env files (only .env.example is tracked)
+.env
+.env.*
+!.env.example
+
+# Build artifacts / archives (regenerable)
+*.zip
+
+# Logs / OS / editor cruft
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

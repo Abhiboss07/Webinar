@@ -1,0 +1,4 @@
+# Build tooling only — the compiled css/main.css IS committed/uploaded (static deploy).
+node_modules/
+*.log
+.DS_Store

@@ -1,0 +1,13 @@
+/* Tailwind build input → compiled (minified) to ../css/main.css.
+   Base resets/tokens live here; custom component classes are in
+   css/components.css and media queries in css/responsive.css. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root { --ease: cubic-bezier(0.22, 1, 0.36, 1); }
+  html { scroll-behavior: smooth; }
+  body { font-family: "DM Sans", sans-serif; background: #fffcf8; }
+  ::selection { background: rgba(184, 149, 47, 0.35); color: #0f2433; }
+}
