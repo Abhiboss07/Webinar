@@ -6,12 +6,22 @@
  */
 const config = require("../config");
 const sheetService = require("../services/sheetService");
+const registrationStore = require("../services/registrationStore");
 const { clean } = require("../utils/helpers");
 
 async function register(req, res) {
   try {
     const b = req.body || {};
     const regId = clean(b.regId);
+
+    // Mirror into MongoDB first (best-effort; never throws). This means a lead is
+    // captured for the dashboard even if the Sheets write below hiccups.
+    await registrationStore.upsertLead({
+      regId,
+      fullName: b.fullName, mobile: b.mobile, email: b.email, profession: b.profession,
+      city: b.city, experience: b.experience, mode: b.mode,
+      workshop: clean(b.workshop) || config.workshopName, source: b.source,
+    });
 
     const reg = {
       "Reg ID": regId,                              // upsert key column

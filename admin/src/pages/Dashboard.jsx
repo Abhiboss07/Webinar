@@ -1,64 +1,131 @@
 import { useEffect, useState } from "react";
 import Layout from "../components/Layout.jsx";
+import { Panel } from "../components/ui.jsx";
+import { AreaLine, Donut, HBars } from "../components/charts.jsx";
 import { api } from "../lib/api.js";
 
-function Stat({ label, icon, value, hint, badge }) {
+const money = (n, cur = "INR") =>
+  new Intl.NumberFormat("en-IN", { style: "currency", currency: cur, maximumFractionDigits: 0 }).format(n || 0);
+const num = (n) => new Intl.NumberFormat().format(n || 0);
+
+function Stat({ label, icon, value, hint, accent }) {
   return (
     <div className="card stat">
       <div className="label">{icon && <span>{icon}</span>}{label}</div>
-      <div className="value">{value ?? "—"}</div>
-      {badge}
+      <div className="value" style={accent ? { color: accent } : null}>{value}</div>
       {hint && <div className="hint">{hint}</div>}
     </div>
   );
 }
 
+function SkelCards() {
+  return (
+    <div className="grid cards">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div className="card stat" key={i}>
+          <div className="skel" style={{ height: 12, width: "55%" }} />
+          <div className="skel" style={{ height: 26, width: "40%", marginTop: 12 }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Empty({ title, hint }) {
+  return (
+    <div className="empty">
+      <div className="em-ico">📭</div>
+      <div className="em-title">{title}</div>
+      {hint && <div style={{ fontSize: 13, marginTop: 4 }}>{hint}</div>}
+    </div>
+  );
+}
+
 export default function Dashboard() {
-  const [cfg, setCfg] = useState(null);
-  const [updatedAt, setUpdatedAt] = useState(null);
+  const [data, setData] = useState(null);
+  const [days, setDays] = useState(14);
   const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.getConfig()
-      .then((r) => { setCfg(r.data || {}); setUpdatedAt(r.updatedAt); })
-      .catch((e) => setErr(e.message));
-  }, []);
+    let alive = true;
+    setLoading(true);
+    api.dashboard(days)
+      .then((r) => { if (alive) { setData(r); setErr(""); } })
+      .catch((e) => { if (alive) setErr(e.message); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [days]);
 
-  const w = (cfg && cfg.workshop) || {};
-  const reg = (cfg && cfg.registration) || {};
-  const registrationOpen = reg.open !== false; // default open unless explicitly closed
+  const c = data?.cards;
+  const w = data?.workshop;
+  const hasRegs = (c?.total || 0) > 0;
 
   return (
     <Layout title="Dashboard">
       {err && <div className="auth-err">{err}</div>}
 
-      <div className="section-title">Workshop at a glance</div>
-      <div className="grid cards">
-        <Stat label="Workshop Date" icon="📅" value={w.date} hint={w.time} />
-        <Stat label="Price" icon="💳" value={w.price} hint={w.originalPrice ? `was ${w.originalPrice}` : null} />
-        <Stat label="Mode" icon="💻" value={w.venue} />
-        <Stat label="Registration" icon="🎟" value={registrationOpen ? "Open" : "Closed"}
-          badge={<span className={`badge ${registrationOpen ? "good" : "bad"}`} style={{ marginTop: 8 }}>
-            {registrationOpen ? "Accepting sign-ups" : "Paused"}</span>} />
-        <Stat label="Website" icon="🌐" value="Live"
-          badge={<span className="badge good" style={{ marginTop: 8 }}>Serving from CMS</span>} />
-        <Stat label="Content updated" icon="🕑"
-          value={updatedAt ? new Date(updatedAt).toLocaleDateString() : "—"}
-          hint={updatedAt ? new Date(updatedAt).toLocaleTimeString() : null} />
+      <div className="hstack" style={{ marginBottom: 14 }}>
+        <div className="section-title" style={{ margin: 0 }}>Overview</div>
+        <div className="spacer" />
+        <div className="hstack" style={{ gap: 6, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: 4 }}>
+          {[7, 14, 30, 90].map((d) => (
+            <button key={d} className={`btn ${days === d ? "primary" : "ghost"}`} style={{ padding: "6px 11px" }} onClick={() => setDays(d)}>{d}d</button>
+          ))}
+        </div>
       </div>
 
-      <div className="section-title">Registrations &amp; revenue</div>
-      <div className="notice">
-        Registration counts, revenue, and payment status currently live in your Google Sheet + Razorpay.
-        The next phase moves registrations into the database so these cards show live totals
-        (Total / Today / Revenue / Pending / Successful) with charts and CSV/Excel export.
+      {loading || !c ? <SkelCards /> : (
+        <div className="grid cards">
+          <Stat label="Total Registrations" icon="👥" value={num(c.total)} hint={`${num(c.today)} today`} />
+          <Stat label="Successful Payments" icon="✅" value={num(c.paid)} accent="var(--good)" />
+          <Stat label="Pending Payments" icon="⏳" value={num(c.pending)} accent="var(--warn)" />
+          <Stat label="Revenue" icon="₹" value={money(c.revenue, c.currency)} hint="from paid registrations" />
+          <Stat label="Today" icon="📈" value={num(c.today)} hint="new sign-ups" />
+          <Stat label="Upcoming Workshop" icon="📅" value={w?.date || "—"} hint={w?.name || ""} />
+        </div>
+      )}
+
+      <div className="section-title">Analytics</div>
+      <div className="charts-grid">
+        <Panel title="Registrations over time" subtitle={`Last ${days} days`}>
+          {loading ? <div className="skel" style={{ height: 200 }} /> :
+            hasRegs ? <AreaLine data={data.charts.registrationsOverTime} /> :
+              <Empty title="No registrations yet" hint="Sign-ups will chart here as they arrive." />}
+        </Panel>
+        <Panel title="Payment status" subtitle="All registrations">
+          {loading ? <div className="skel" style={{ height: 200 }} /> :
+            hasRegs ? <Donut data={data.charts.paymentStatus} /> :
+              <Empty title="Nothing to show" />}
+        </Panel>
       </div>
-      <div className="grid cards" style={{ marginTop: 16, opacity: .55 }}>
-        <Stat label="Total Registrations" icon="👥" value="—" hint="Phase 2" />
-        <Stat label="Today" icon="📈" value="—" hint="Phase 2" />
-        <Stat label="Total Revenue" icon="₹" value="—" hint="Phase 2" />
-        <Stat label="Pending Payments" icon="⏳" value="—" hint="Phase 2" />
-        <Stat label="Successful Payments" icon="✅" value="—" hint="Phase 2" />
+
+      <div className="charts-grid" style={{ gridTemplateColumns: "1fr 1fr", marginTop: 16 }}>
+        <Panel title="Registration source" subtitle="Where sign-ups come from">
+          {loading ? <div className="skel" style={{ height: 140 }} /> :
+            hasRegs ? <HBars data={data.charts.sourceBreakdown} /> :
+              <Empty title="No source data yet" />}
+        </Panel>
+        <Panel title="Recent activity" subtitle="Latest sign-ups">
+          {loading ? <div className="skel" style={{ height: 140 }} /> :
+            data.recentActivity.length ? (
+              <div style={{ overflowX: "auto" }}>
+                <table className="tbl">
+                  <thead><tr><th>Name</th><th>Profession</th><th>City</th><th>Status</th></tr></thead>
+                  <tbody>
+                    {data.recentActivity.map((r, i) => (
+                      <tr key={i}>
+                        <td style={{ fontWeight: 600 }}>{r.name}</td>
+                        <td className="muted">{r.profession || "—"}</td>
+                        <td className="muted">{r.city || "—"}</td>
+                        <td><span className={`pill ${r.status}`}>{r.status}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : <Empty title="No activity yet" />}
+        </Panel>
       </div>
     </Layout>
   );

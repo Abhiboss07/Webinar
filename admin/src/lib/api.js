@@ -33,6 +33,7 @@ export const api = {
   me: () => request("/api/auth/me"),
   getConfig: () => request("/api/site-config", { auth: false }),
   saveConfig: (data) => request("/api/site-config", { method: "PUT", body: { data } }),
+  dashboard: (days = 14) => request(`/api/stats/dashboard?days=${days}`),
 };
 
 export { BASE };

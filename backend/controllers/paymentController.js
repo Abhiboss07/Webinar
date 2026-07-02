@@ -5,6 +5,7 @@
  */
 const razorpayService = require("../services/razorpayService");
 const sheetService = require("../services/sheetService");
+const registrationStore = require("../services/registrationStore");
 const { clean } = require("../utils/helpers");
 
 async function verifyPayment(req, res) {
@@ -46,6 +47,12 @@ async function verifyPayment(req, res) {
   } catch (err) {
     console.error("[verify-payment] sheet update failed (payment WAS verified):", err.message, { regId, paymentId });
   }
+
+  // Mirror the Paid status into MongoDB (best-effort; never throws).
+  await registrationStore.markPaid(regId, {
+    orderId, paymentId, method, amount: amountRupees, currency: "INR",
+    transactionTime: new Date().toISOString(),
+  });
 
   return res.json({ status: "success", paymentId: paymentId, orderId: orderId, method: method, amount: amountRupees });
 }

@@ -12,6 +12,7 @@ const { notFound, errorHandler } = require("./middleware/errorHandler");
 const paymentRoutes = require("./routes/paymentRoutes");
 const authRoutes = require("./routes/authRoutes");
 const contentRoutes = require("./routes/contentRoutes");
+const statsRoutes = require("./routes/statsRoutes");
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.get("/health", (req, res) => res.json({ status: "ok", env: config.env, confi
 
 // ---- CMS / admin API ----
 app.use("/api/auth", authRoutes);
+app.use("/api/stats", statsRoutes);
 app.use("/api", contentRoutes);
 
 // ---- Payment / registration routes (unchanged public flow) ----

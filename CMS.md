@@ -201,10 +201,42 @@ site renders from that response; the old file remains solely as a safety fallbac
 - Admin app builds cleanly (Vite, 41 modules).
 - Public `config.js`/`app.js` fetch the API and fall back to the bundled file if it's unreachable.
 
-## Phase 2+ roadmap (from the full brief)
+---
 
-Split content into dedicated models with per-item CRUD + drag-reorder (Trainers, Modules, FAQ,
-Testimonials, Benefits, Features); **Registrations** in the DB with search / filter / CSV+Excel export /
-status editing; **Analytics** with charts; **Media Manager** on Cloudinary; dedicated Payment / Google
-Sheets / SEO settings screens; and admin niceties (pagination, confirmation dialogs, more autosave).
+# Phase 2 (in progress)
+
+Order (revised for early client value): **Dashboard → Homepage CMS → Media → Registration Manager →
+Workshop Manager → Payments → Users → Settings.**
+
+## Phase 2.1 — Dashboard ✅
+
+Real analytics, backed by a new `Registration` collection that the live sign-up flow now
+**dual-writes** to (Google Sheets stays the primary record; the Mongo mirror is best-effort and never
+breaks the payment path).
+
+**Data model — `registrations`:** `regId` (unique), contact + profile fields, `source`/`sourceHost`,
+`paymentStatus` (Pending/Paid/Failed), `orderId`/`paymentId`/`paymentMethod`/`amount`/`currency`/
+`transactionTime`, timestamps. Written by `services/registrationStore.js` from the existing
+`/register` and `/verify-payment` controllers.
+
+**API:** `GET /api/stats/dashboard?days=7|14|30|90` (admin) → cards (total / today / pending / paid /
+failed / revenue), active workshop, charts (registrations-over-time, payment-status, source-breakdown),
+and recent activity. Day buckets are computed in **IST** consistently across the window and the Mongo
+grouping, so the time series always reconciles with the totals.
+
+**Admin UI:** stat cards, three dependency-free SVG charts (validated palette, hover tooltips, direct
+labels, legends), a recent-activity table, a 7/14/30/90-day range switch, skeleton loaders and empty
+states, in both light and dark themes.
+
+**Verified:** auth required (401 without token); card integrity (paid+pending+failed==total, revenue ==
+Σ paid×price); `Σ(series) == count(in-window)`; dual-write captures a lead even when the Sheets write
+fails; admin builds clean.
+
+## Phase 2.2+ roadmap (from the full brief)
+
+Homepage CMS with per-section enable/disable + drag-reorder + preview; **Media Manager** on Cloudinary;
+**Registration Manager** (search/filter/sort/CSV+Excel/status/bulk — built on the `Registration` model
+above); **Workshop Manager** (multiple workshops, active-workshop selection); **Payments** view; **Users**
+& roles; and a consolidated **Settings** screen. UI polish: glassmorphism, animations, pagination,
+confirmation dialogs.
 ```
