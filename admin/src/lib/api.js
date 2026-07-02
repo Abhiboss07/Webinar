@@ -32,7 +32,13 @@ export const api = {
   login: (email, password) => request("/api/auth/login", { method: "POST", body: { email, password }, auth: false }),
   me: () => request("/api/auth/me"),
   getConfig: () => request("/api/site-config", { auth: false }),
-  saveConfig: (data) => request("/api/site-config", { method: "PUT", body: { data } }),
+  // Draft workflow.
+  getDraft: () => request("/api/site-config/draft"),
+  saveDraft: (data) => request("/api/site-config", { method: "PUT", body: { data } }),
+  publish: () => request("/api/site-config/publish", { method: "POST" }),
+  discardDraft: () => request("/api/site-config/discard", { method: "POST" }),
+  history: () => request("/api/site-config/history"),
+  revert: (version) => request("/api/site-config/revert", { method: "POST", body: { version } }),
   dashboard: (days = 14) => request(`/api/stats/dashboard?days=${days}`),
 };
 

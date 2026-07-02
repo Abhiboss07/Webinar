@@ -29,17 +29,36 @@ function applySeo() {
   const fav = document.querySelector('link[rel="icon"]'); if (fav && C.brand.favicon) fav.href = C.brand.favicon;
 }
 
-/* ---------- 2. Render all sections ---------- */
+/* ---------- 2. Render all sections ----------
+   Body sections render in the order given by the CMS manifest (C.sections),
+   honouring each section's `enabled` flag. If the manifest is missing (older
+   data / offline fallback), we render the historical default order. A section
+   whose renderer or content is missing is skipped safely. */
+const SECTION_RENDERERS = {
+  hero: T.Hero, testimonials: T.Testimonials, problem: T.Problem, modules: T.Modules,
+  whyDifferent: T.WhyDifferent, audience: T.Audience, choice: T.Choice, trainer: T.Trainer,
+  bonus: T.Bonus, guarantee: T.Guarantee, faq: T.Faq, finalCta: T.FinalCta,
+};
+const DEFAULT_SECTION_ORDER = [
+  "hero", "testimonials", "problem", "modules", "whyDifferent", "audience",
+  "choice", "trainer", "bonus", "guarantee", "faq", "finalCta",
+];
+
+function sectionManifest() {
+  const m = Array.isArray(C.sections) && C.sections.length
+    ? C.sections
+    : DEFAULT_SECTION_ORDER.map((key) => ({ key, enabled: true }));
+  return m.filter((s) => s && s.enabled !== false && SECTION_RENDERERS[s.key] && C[s.key]);
+}
+
 function render() {
   const mount = (id, html) => { const el = document.getElementById(id); if (el) el.outerHTML = html; };
   document.getElementById("mount-header").outerHTML = T.Header(C);
   const main = document.getElementById("top");
-  main.innerHTML = [
-    T.Hero(C), T.Testimonials(C), T.Problem(C), T.Modules(C), T.WhyDifferent(C),
-    T.Audience(C), T.Choice(C), T.Trainer(C), T.Bonus(C), T.Guarantee(C),
-    T.Faq(C), T.FinalCta(C),
-  ].join("");
-  mount("mount-footer", T.Footer(C));
+  main.innerHTML = sectionManifest().map((s) => SECTION_RENDERERS[s.key](C)).join("");
+  // Footer is chrome (always last) but can be toggled off from the CMS.
+  const footerEl = document.getElementById("mount-footer");
+  if (footerEl) { if (C.footer && C.footer.enabled === false) footerEl.remove(); else footerEl.outerHTML = T.Footer(C); }
   mount("mount-sticky", T.StickyBar(C));
   mount("mount-popup", T.Popup(C));
   mount("mount-modal", T.RegistrationModal(C));

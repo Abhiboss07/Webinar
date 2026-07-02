@@ -1,100 +1,52 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import Layout from "../components/Layout.jsx";
-import { Panel, Field, TextArea, useToast } from "../components/ui.jsx";
-import { api } from "../lib/api.js";
-
-/* Immutable nested set: setPath(obj, ["workshop","price"], "₹149"). */
-function setPath(obj, path, value) {
-  if (!path.length) return value;
-  const [head, ...rest] = path;
-  const base = obj && typeof obj === "object" ? obj : {};
-  return { ...base, [head]: setPath(base[head], rest, value) };
-}
-const get = (obj, path) => path.reduce((o, k) => (o == null ? o : o[k]), obj);
+import PublishBar from "../components/PublishBar.jsx";
+import { Panel, Field, TextArea } from "../components/ui.jsx";
+import { useDraft, getPath } from "../lib/draft.jsx";
 
 export default function Content() {
-  const toast = useToast();
-  const [cfg, setCfg] = useState(null);
+  const { config, update, setConfig } = useDraft();
   const [tab, setTab] = useState("guided");
-  const [status, setStatus] = useState("saved"); // saved | dirty | saving | error
   const [jsonText, setJsonText] = useState("");
   const [jsonErr, setJsonErr] = useState("");
-  const latest = useRef(null);
-  const timer = useRef(null);
 
   useEffect(() => {
-    api.getConfig().then((r) => { setCfg(r.data || {}); latest.current = r.data || {}; })
-      .catch((e) => toast(e.message, "error"));
-  }, [toast]);
-
-  const persist = useCallback(async () => {
-    setStatus("saving");
-    try { await api.saveConfig(latest.current); setStatus("saved"); }
-    catch (e) { setStatus("error"); toast(e.message || "Save failed", "error"); }
-  }, [toast]);
-
-  // Debounced autosave whenever cfg changes via the guided editor.
-  const update = useCallback((path, value) => {
-    setCfg((prev) => {
-      const next = setPath(prev, path, value);
-      latest.current = next;
-      return next;
-    });
-    setStatus("dirty");
-    clearTimeout(timer.current);
-    timer.current = setTimeout(persist, 900);
-  }, [persist]);
-
-  const saveNow = () => { clearTimeout(timer.current); persist(); };
-
-  // Keep the JSON tab in sync when opened.
-  useEffect(() => {
-    if (tab === "json" && cfg) { setJsonText(JSON.stringify(cfg, null, 2)); setJsonErr(""); }
+    if (tab === "json" && config) { setJsonText(JSON.stringify(config, null, 2)); setJsonErr(""); }
   }, [tab]); // eslint-disable-line
+
+  if (!config) return <Layout title="Content Editor"><div className="notice">Loading content…</div></Layout>;
 
   const applyJson = () => {
     try {
       const parsed = JSON.parse(jsonText);
       if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Top level must be an object");
-      setCfg(parsed); latest.current = parsed; setJsonErr("");
-      saveNow();
-      toast("Saved from JSON", "success");
+      setConfig(parsed); setJsonErr("");
     } catch (e) { setJsonErr(e.message); }
   };
 
-  if (!cfg) return <Layout title="Content Editor"><div className="notice">Loading content…</div></Layout>;
-
   const F = (label, path, opts = {}) => (
-    <Field label={label} value={get(cfg, path)} onChange={(v) => update(path, v)} {...opts} />
+    <Field label={label} value={getPath(config, path)} onChange={(v) => update(path, v)} {...opts} />
   );
   const TA = (label, path, opts = {}) => (
-    <TextArea label={label} value={get(cfg, path)} onChange={(v) => update(path, v)} {...opts} />
+    <TextArea label={label} value={getPath(config, path)} onChange={(v) => update(path, v)} {...opts} />
   );
-
-  const saver = {
-    saved: <span className="saver"><span className="dot saved" /> All changes saved</span>,
-    dirty: <span className="saver"><span className="dot dirty" /> Unsaved changes…</span>,
-    saving: <span className="saver"><span className="dot saving" /> Saving…</span>,
-    error: <span className="saver"><span className="dot" style={{ background: "var(--bad)" }} /> Save failed</span>,
-  }[status];
 
   return (
     <Layout title="Content Editor">
-      <div className="hstack" style={{ marginBottom: 18 }}>
+      <PublishBar />
+
+      <div className="hstack" style={{ margin: "18px 0" }}>
         <div className="hstack" style={{ gap: 6, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: 4 }}>
           <button className={`btn ${tab === "guided" ? "primary" : "ghost"}`} onClick={() => setTab("guided")}>Guided</button>
           <button className={`btn ${tab === "json" ? "primary" : "ghost"}`} onClick={() => setTab("json")}>Advanced (JSON)</button>
         </div>
-        <div className="spacer" />
-        {saver}
-        <button className="btn primary" onClick={saveNow} disabled={status === "saving"}>Save now</button>
       </div>
 
       {tab === "guided" ? (
         <>
           <Panel title="Brand" subtitle="Shown in the navbar and footer">
             {F("Brand name", ["brand", "name"], { half: true })}
-            {F("Logo path", ["brand", "logo"], { half: true, desc: "e.g. assets/logo.png (Media manager comes in Phase 2)" })}
+            {F("Logo path", ["brand", "logo"], { half: true, desc: "e.g. assets/logo.png (Media manager comes in Module 2.3)" })}
           </Panel>
 
           <Panel title="Workshop facts" subtitle="Change once — these propagate everywhere via {{tokens}}">
@@ -140,13 +92,14 @@ export default function Content() {
           </Panel>
 
           <div className="notice">
-            Dedicated editors for <b>Trainers, Modules, FAQ, Testimonials, Benefits, Features</b> (add / edit / delete /
-            drag-reorder) arrive in Phase 2. Until then, edit those arrays in the <b>Advanced (JSON)</b> tab — every value is fully editable today.
+            Reorder / show / hide sections on the <b>Homepage Sections</b> page. Dedicated editors for
+            <b> Trainers, Modules, FAQ, Testimonials</b> (add / edit / delete) arrive next — until then, edit those
+            arrays in the <b>Advanced (JSON)</b> tab.
           </div>
         </>
       ) : (
         <Panel title="Full content (JSON)" subtitle="Edit any value — including arrays like modules, faq, testimonials"
-          right={<button className="btn primary" onClick={applyJson}>Validate &amp; save</button>}>
+          right={<button className="btn primary" onClick={applyJson}>Apply to draft</button>}>
           {jsonErr && <div className="auth-err">Invalid JSON: {jsonErr}</div>}
           <textarea className="mono" style={{ minHeight: 460 }} value={jsonText}
             onChange={(e) => setJsonText(e.target.value)} spellCheck={false} />

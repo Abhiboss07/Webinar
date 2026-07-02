@@ -1,9 +1,11 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "./lib/auth.jsx";
+import { DraftProvider } from "./lib/draft.jsx";
 import { ToastProvider } from "./components/ui.jsx";
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Content from "./pages/Content.jsx";
+import Sections from "./pages/Sections.jsx";
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -19,6 +21,16 @@ function GuestOnly({ children }) {
   return children;
 }
 
+// Content + Sections share ONE draft (autosave + publish), so they live under a
+// single DraftProvider that stays mounted while navigating between them.
+function ContentArea() {
+  return (
+    <Protected>
+      <DraftProvider><Outlet /></DraftProvider>
+    </Protected>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -27,7 +39,10 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
             <Route path="/" element={<Protected><Dashboard /></Protected>} />
-            <Route path="/content" element={<Protected><Content /></Protected>} />
+            <Route element={<ContentArea />}>
+              <Route path="/content" element={<Content />} />
+              <Route path="/sections" element={<Sections />} />
+            </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </ToastProvider>

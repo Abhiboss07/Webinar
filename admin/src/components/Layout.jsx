@@ -6,7 +6,10 @@ const NAV = [
   { group: "Overview", items: [{ to: "/", label: "Dashboard", ico: "▦", end: true }] },
   {
     group: "Website Content",
-    items: [{ to: "/content", label: "Content Editor", ico: "✎" }],
+    items: [
+      { to: "/sections", label: "Homepage Sections", ico: "▤" },
+      { to: "/content", label: "Content Editor", ico: "✎" },
+    ],
   },
 ];
 

@@ -232,7 +232,45 @@ states, in both light and dark themes.
 Σ paid×price); `Σ(series) == count(in-window)`; dual-write captures a lead even when the Sheets write
 fails; admin builds clean.
 
-## Phase 2.2+ roadmap (from the full brief)
+## Phase 2.2 — Homepage CMS ✅
+
+Per-section control over the homepage, plus a proper **draft → preview → publish** workflow with
+version history — all inside the existing `SiteConfig` model (no duplicate structures).
+
+**Section manifest, not duplicated content:** `data.sections` is an ordered `[{key, enabled}]` list that
+*references* the existing content keys. `backend/config/sections.js` is the canonical list of the 12 real
+body sections (hero, testimonials, problem, modules, whyDifferent, audience, choice, trainer, bonus,
+guarantee, faq, finalCta) with friendly labels; `normalizeManifest()` seeds/repairs it non-destructively.
+
+**Draft / publish:** `data` = published (what the public serves), `draft` = the admin's working copy
+(autosave target), `history` = capped snapshots for revert.
+
+**API added:** `GET /api/site-config?preview=1` (draft for Preview), `GET /api/site-config/draft`,
+`PUT /api/site-config` (now saves the **draft**), `POST /api/site-config/publish`,
+`POST /api/site-config/discard`, `GET /api/site-config/history`, `POST /api/site-config/revert`.
+
+**Public site:** `frontend/js/app.js` renders body sections in manifest order, honouring `enabled` and
+the footer toggle, skipping any section with no renderer/content; `?preview=1` loads the draft. Missing
+manifest → historical default order (fully backward compatible). Synced to `frontend-production`.
+
+**Admin:** new **Homepage Sections** page (drag-and-drop reorder, enable/disable switches, footer toggle,
+live "N of 12 enabled" validation); a shared **PublishBar** (autosave status, Preview, Discard, Publish,
+Version history → Restore) driven by a `DraftProvider` that the Content editor now also uses.
+
+**Database changes:** `siteconfigs` gains `draft`, `history[]` (capped 15), `publishedAt`,
+`draftUpdatedAt`. No new collection.
+
+**Verified (18/18 e2e assertions):** auth guards; manifest normalization (12 sections); draft isolation
+(public shows published while preview shows draft); reorder + disable persist through publish; history
+snapshot + `hasDraft` reset; validation 400s; discard restores published; revert restores an older
+snapshot; frontend/backend section order confirmed identical.
+
+**Known limitations:** section content is edited on the Content page (guided fields + JSON) — dedicated
+per-item editors (add/edit/delete individual trainers, FAQs, modules) are a later slice; Preview needs
+`VITE_PUBLIC_SITE_URL` set; charts/section UI still need a human eyeball in a browser (no browser in the
+build environment).
+
+## Phase 2.3+ roadmap (from the full brief)
 
 Homepage CMS with per-section enable/disable + drag-reorder + preview; **Media Manager** on Cloudinary;
 **Registration Manager** (search/filter/sort/CSV+Excel/status/bulk — built on the `Registration` model

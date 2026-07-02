@@ -57,7 +57,10 @@ export const $ = (id) => document.getElementById(id);
 export async function loadConfig() {
   try {
     const base = resolveApiBase(FALLBACK_CONFIG);
-    const res = await fetch(base + "/api/site-config", { headers: { Accept: "application/json" } });
+    // ?preview=1 on the page → fetch the unpublished DRAFT (admin "Preview").
+    const preview = (typeof location !== "undefined" && new URLSearchParams(location.search).get("preview") === "1");
+    const url = base + "/api/site-config" + (preview ? "?preview=1" : "");
+    const res = await fetch(url, { headers: { Accept: "application/json" } });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const json = await res.json();
     const data = json && json.data ? json.data : json;
