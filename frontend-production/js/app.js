@@ -3,7 +3,7 @@
    interactions, and orchestrates the registration → payment → success flow.
    Section markup lives in /sections; content lives in config/workshop-config.js.
    ========================================================================== */
-import { C, $ } from "./config.js";
+import { C, $, loadConfig } from "./config.js";
 import { Components as T } from "../sections/index.js";
 import { initPopup } from "./popup.js";
 import { initForm } from "./form.js";
@@ -227,13 +227,20 @@ function showSuccessView(data, info) {
   setTimeout(() => { window.location.href = target; }, 2200);
 }
 
-/* ---------- boot ---------- */
-applySeo();
-render();
-initReveal();
-initFaq();
-initStickyBar();
-initPopup();
-initModal();
-initForm();
-initPayment();
+/* ---------- boot ----------
+   Fetch CMS content first (falls back to the bundled config on failure), then
+   render. Everything below reads the live `C` binding, so it reflects whatever
+   loadConfig() resolved. */
+async function boot() {
+  await loadConfig();
+  applySeo();
+  render();
+  initReveal();
+  initFaq();
+  initStickyBar();
+  initPopup();
+  initModal();
+  initForm();
+  initPayment();
+}
+boot();

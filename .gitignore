@@ -8,6 +8,7 @@ node_modules/
 
 # Build artifacts / archives (regenerable)
 *.zip
+dist/
 
 # Logs / OS / editor cruft
 *.log

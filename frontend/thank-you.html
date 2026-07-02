@@ -46,8 +46,22 @@
   </main>
 
   <script type="module">
-    import C from "./config/workshop-config.js";
-    (function () {
+    import FALLBACK from "./config/workshop-config.js";
+    // Content comes from the CMS (GET /api/site-config); the bundled config is an
+    // offline fallback so this page always renders.
+    function resolveApiBase(cfg) {
+      var api = (cfg && cfg.api) || {};
+      var host = (typeof location !== "undefined" && location.hostname) || "";
+      var isDev = host === "localhost" || host === "127.0.0.1" || host === "" || host === "0.0.0.0";
+      var base = isDev ? (api.dev || "http://localhost:4000") : (api.prod || api.dev || "");
+      return String(base).replace(/\/$/, "");
+    }
+    (async function () {
+      var C = FALLBACK;
+      try {
+        var res = await fetch(resolveApiBase(FALLBACK) + "/api/site-config", { headers: { Accept: "application/json" } });
+        if (res.ok) { var j = await res.json(); var d = j && j.data ? j.data : j; if (d && d.workshop) C = d; }
+      } catch (e) { /* keep fallback */ }
       var w = C.workshop || {}, p = C.payment || {}, ty = p.thankYou || {}, foot = (C.footer || {}).contact || {};
 
       // Token interpolation for the few strings we show (price/date/etc.).

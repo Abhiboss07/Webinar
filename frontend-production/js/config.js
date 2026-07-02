@@ -1,15 +1,22 @@
 /* ============================================================================
-   CONFIG — loads the single config file and resolves {{token}} placeholders.
-   Every other module imports `C` (the resolved config) from here.
+   CONFIG — loads site content and resolves {{token}} placeholders.
+
+   Content now comes from the CMS: `loadConfig()` fetches GET /api/site-config
+   (managed in the Admin Panel). The bundled config/workshop-config.js is kept
+   ONLY as an offline fallback so the site never renders blank if the API is
+   briefly unreachable. Every other module imports the live `C` from here.
+
+   IMPORTANT: `C` is a *live* export — it is replaced in place once the API
+   responds. Read it inside functions (at call time), not destructured at the
+   top level, so consumers always see the fetched content. js/app.js awaits
+   loadConfig() before rendering, so C is populated before any section renders.
    ========================================================================== */
-import WORKSHOP_CONFIG from "../config/workshop-config.js";
+import FALLBACK_CONFIG from "../config/workshop-config.js";
 
 /* {{token}} interpolation — single source of truth.
    Resolves {{name}} {{date}} {{time}} {{venue}} {{price}} {{originalPrice}}
-   {{bonusValue}} {{brand}} across every string, so a value set once in
-   `workshop` (or brand) updates everywhere it appears.
-   Note: single-brace {placeholders} (e.g. {fullName}) are left untouched —
-   those are filled per-registrant at submit time. */
+   {{bonusValue}} {{brand}} across every string. Single-brace {placeholders}
+   (e.g. {fullName}) are left untouched — filled per-registrant at submit time. */
 function interpolate(cfg) {
   const w = cfg.workshop || {};
   const tokens = {
@@ -25,9 +32,42 @@ function interpolate(cfg) {
     return o;
   };
   walk(cfg);
+  return cfg;
 }
 
-interpolate(WORKSHOP_CONFIG);
+/* Resolve the backend base URL from a config object (dev on localhost, prod
+   elsewhere). Uses the fallback config so it works before the API responds. */
+function resolveApiBase(cfg) {
+  const api = (cfg && cfg.api) || {};
+  const host = (typeof location !== "undefined" && location.hostname) || "";
+  const isDev = host === "localhost" || host === "127.0.0.1" || host === "" || host === "0.0.0.0";
+  const base = isDev ? (api.dev || "http://localhost:4000") : (api.prod || api.dev || "");
+  return String(base).replace(/\/$/, "");
+}
 
-export const C = WORKSHOP_CONFIG;
+const clone = (o) => (typeof structuredClone === "function" ? structuredClone(o) : JSON.parse(JSON.stringify(o)));
+
+/* C starts as the interpolated fallback so nothing is ever undefined during the
+   initial fetch. loadConfig() replaces it with the CMS content on success. */
+export let C = interpolate(clone(FALLBACK_CONFIG));
 export const $ = (id) => document.getElementById(id);
+
+/* Fetch live content from the CMS. On any failure, keeps the bundled fallback so
+   the page still renders. Call (and await) this once before rendering. */
+export async function loadConfig() {
+  try {
+    const base = resolveApiBase(FALLBACK_CONFIG);
+    const res = await fetch(base + "/api/site-config", { headers: { Accept: "application/json" } });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const json = await res.json();
+    const data = json && json.data ? json.data : json;
+    if (data && typeof data === "object" && data.workshop) {
+      C = interpolate(data);
+      return C;
+    }
+    throw new Error("empty or malformed site-config");
+  } catch (err) {
+    console.warn("[config] CMS unavailable — using bundled fallback content:", err && err.message);
+    return C; // already the interpolated fallback
+  }
+}
