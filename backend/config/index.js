@@ -63,6 +63,23 @@ module.exports = {
     // Admin session lifetime. Keep it short-ish; the admin can re-login.
     expiresIn: process.env.JWT_EXPIRES_IN || "12h",
   },
+  // ---- Media storage (Module 2.3) ----
+  // Provider: "cloudinary" in production, "local" for dev/fallback. Auto-detects
+  // cloudinary when its cloud name is present, otherwise falls back to local disk.
+  storage: {
+    provider: (process.env.STORAGE_PROVIDER || (process.env.CLOUDINARY_CLOUD_NAME ? "cloudinary" : "local")).toLowerCase(),
+    // Local adapter: files saved here and served at <publicBaseUrl>/uploads/…
+    uploadDir: process.env.UPLOAD_DIR || "uploads",
+    // Absolute base for building local file URLs (must be reachable by the site).
+    publicBaseUrl: (process.env.API_URL || `http://localhost:${parseInt(process.env.PORT || "4000", 10)}`).replace(/\/$/, ""),
+    maxBytes: parseInt(process.env.MEDIA_MAX_BYTES || String(25 * 1024 * 1024), 10), // 25MB
+  },
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME || "",
+    apiKey: process.env.CLOUDINARY_API_KEY || "",
+    apiSecret: process.env.CLOUDINARY_API_SECRET || "",
+    baseFolder: process.env.CLOUDINARY_FOLDER || "youngness",
+  },
   // Bootstrap admin — used ONCE by scripts/seedAdmin.js to create the first user.
   // After seeding, credentials live (hashed) in the DB; changing these env vars
   // does NOT change an existing admin's password (re-run seed:admin to reset).

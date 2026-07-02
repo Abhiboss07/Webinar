@@ -3,6 +3,7 @@
  * Express app — middleware, CORS, routes and error handling.
  * Kept separate from server.js so it can be imported in tests without listening.
  */
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
@@ -13,6 +14,7 @@ const paymentRoutes = require("./routes/paymentRoutes");
 const authRoutes = require("./routes/authRoutes");
 const contentRoutes = require("./routes/contentRoutes");
 const statsRoutes = require("./routes/statsRoutes");
+const mediaRoutes = require("./routes/mediaRoutes");
 
 const app = express();
 
@@ -38,9 +40,16 @@ app.use(cors({
 // Health check (Render uses this).
 app.get("/health", (req, res) => res.json({ status: "ok", env: config.env, configured: config.isConfigured() }));
 
+// Local media files (only used when STORAGE_PROVIDER=local; Cloudinary serves
+// its own CDN URLs in production). CORS-friendly so the site/admin can load them.
+app.use("/uploads", express.static(path.resolve(process.cwd(), config.storage.uploadDir), {
+  setHeaders: (res) => res.set("Access-Control-Allow-Origin", "*"),
+}));
+
 // ---- CMS / admin API ----
 app.use("/api/auth", authRoutes);
 app.use("/api/stats", statsRoutes);
+app.use("/api/media", mediaRoutes);
 app.use("/api", contentRoutes);
 
 // ---- Payment / registration routes (unchanged public flow) ----

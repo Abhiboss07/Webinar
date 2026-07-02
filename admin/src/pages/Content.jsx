@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Layout from "../components/Layout.jsx";
 import PublishBar from "../components/PublishBar.jsx";
 import { Panel, Field, TextArea } from "../components/ui.jsx";
+import { MediaField } from "../components/MediaPicker.jsx";
 import { useDraft, getPath } from "../lib/draft.jsx";
 
 export default function Content() {
@@ -30,6 +31,9 @@ export default function Content() {
   const TA = (label, path, opts = {}) => (
     <TextArea label={label} value={getPath(config, path)} onChange={(v) => update(path, v)} {...opts} />
   );
+  const M = (label, path, opts = {}) => (
+    <MediaField label={label} value={getPath(config, path)} onChange={(v) => update(path, v)} {...opts} />
+  );
 
   return (
     <Layout title="Content Editor">
@@ -46,7 +50,7 @@ export default function Content() {
         <>
           <Panel title="Brand" subtitle="Shown in the navbar and footer">
             {F("Brand name", ["brand", "name"], { half: true })}
-            {F("Logo path", ["brand", "logo"], { half: true, desc: "e.g. assets/logo.png (Media manager comes in Module 2.3)" })}
+            {M("Logo", ["brand", "logo"], { half: true, desc: "Pick from the Media Library or paste a path" })}
           </Panel>
 
           <Panel title="Workshop facts" subtitle="Change once — these propagate everywhere via {{tokens}}">
@@ -68,7 +72,7 @@ export default function Content() {
             {F("Subtitle", ["hero", "subtitle"])}
             {TA("Description", ["hero", "description"])}
             {F("Primary button text", ["hero", "primaryCta"], { half: true })}
-            {F("Hero image", ["hero", "image"], { half: true })}
+            {M("Hero image", ["hero", "image"], { half: true })}
           </Panel>
 
           <Panel title="Registration &amp; contact" subtitle="Pricing, WhatsApp and contact details">
@@ -86,7 +90,7 @@ export default function Content() {
             {TA("Meta description", ["seo", "description"])}
             {F("Keywords", ["seo", "keywords"])}
             <div className="row2">
-              {F("OG image", ["seo", "ogImage"], { half: true })}
+              {M("OG image", ["seo", "ogImage"], { half: true })}
               {F("Canonical URL", ["seo", "canonical"], { half: true })}
             </div>
           </Panel>

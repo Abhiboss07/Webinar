@@ -237,6 +237,42 @@ textarea { resize: vertical; min-height: 78px; line-height: 1.5; }
 .switch .knob { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: transform .15s; }
 .switch.on .knob { transform: translateX(18px); }
 
+/* ---------- media library ---------- */
+.media-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.dropzone { border: 1.5px dashed var(--border-strong); border-radius: var(--radius); background: var(--surface-2); padding: 22px; text-align: center; color: var(--text-muted); cursor: pointer; transition: border-color .15s, background .15s; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 14px; }
+.dropzone:hover, .dropzone.over { border-color: var(--brand); background: var(--ring); color: var(--text); }
+.dz-ico { font-size: 22px; }
+.upload-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.upload-row { display: grid; grid-template-columns: 160px 1fr 42px; align-items: center; gap: 10px; font-size: 13px; }
+.prog { height: 7px; background: var(--surface-2); border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
+.prog-fill { height: 100%; background: var(--brand); border-radius: 999px; transition: width .15s; }
+.media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-top: 16px; }
+.media-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); padding: 10px; }
+.media-thumb { position: relative; border-radius: 9px; overflow: hidden; background: var(--surface-2); display: grid; place-items: center; aspect-ratio: 1; cursor: pointer; }
+.thumb-img { object-fit: cover; width: 100%; height: 100%; }
+.thumb-ph { display: grid; place-items: center; font-size: 30px; color: var(--text-faint); width: 100%; height: 100%; }
+.usage-badge { position: absolute; top: 6px; right: 6px; background: var(--brand); color: #fff; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; }
+.media-name { font-size: 12.5px; font-weight: 600; margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.media-sub { font-size: 11.5px; color: var(--text-faint); margin-top: 2px; }
+.media-actions { display: flex; gap: 6px; margin-top: 8px; }
+.pager { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 20px; }
+
+/* media field (in the content editor) */
+.media-field { display: flex; align-items: center; gap: 8px; }
+.media-field-preview { width: 38px; height: 38px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
+
+/* ---------- modal ---------- */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(10,15,20,.55); backdrop-filter: blur(3px); z-index: 60; display: grid; place-items: center; padding: 20px; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); width: 100%; max-width: 440px; max-height: 88vh; overflow: auto; padding: 18px; }
+.modal-lg { max-width: 760px; } .modal-xl { max-width: 1000px; }
+.modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.asset-detail { display: grid; grid-template-columns: 300px 1fr; gap: 18px; }
+.asset-preview { background: var(--surface-2); border-radius: 12px; display: grid; place-items: center; min-height: 220px; overflow: hidden; }
+.asset-preview img, .asset-preview video { max-width: 100%; max-height: 320px; border-radius: 8px; }
+.asset-meta .kv { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 5px 0; border-bottom: 1px solid var(--border); }
+.asset-meta .kv span { color: var(--text-muted); }
+@media (max-width: 680px) { .asset-detail { grid-template-columns: 1fr; } }
+
 /* ---------- skeleton + empty ---------- */
 .skel { background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 37%, var(--surface-2) 63%); background-size: 400% 100%; animation: shimmer 1.3s ease infinite; border-radius: 8px; }
 @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }

@@ -9,6 +9,7 @@ const NAV = [
     items: [
       { to: "/sections", label: "Homepage Sections", ico: "▤" },
       { to: "/content", label: "Content Editor", ico: "✎" },
+      { to: "/media", label: "Media Library", ico: "🖼" },
     ],
   },
 ];
@@ -49,9 +50,9 @@ export default function Layout({ title, children }) {
           </div>
         ))}
         <div className="nav-group">Coming next</div>
+        <div className="nav-item" style={{ opacity: .5, cursor: "default" }}><span className="ico">◷</span> Workshops</div>
         <div className="nav-item" style={{ opacity: .5, cursor: "default" }}><span className="ico">◷</span> Registrations</div>
-        <div className="nav-item" style={{ opacity: .5, cursor: "default" }}><span className="ico">◷</span> Analytics</div>
-        <div className="nav-item" style={{ opacity: .5, cursor: "default" }}><span className="ico">◷</span> Media</div>
+        <div className="nav-item" style={{ opacity: .5, cursor: "default" }}><span className="ico">◷</span> Payments</div>
 
         <div className="sidebar-foot">
           <div className="hstack" style={{ padding: "6px 10px" }}>

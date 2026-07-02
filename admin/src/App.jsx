@@ -6,6 +6,7 @@ import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Content from "./pages/Content.jsx";
 import Sections from "./pages/Sections.jsx";
+import Media from "./pages/Media.jsx";
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -43,6 +44,7 @@ export default function App() {
               <Route path="/content" element={<Content />} />
               <Route path="/sections" element={<Sections />} />
             </Route>
+            <Route path="/media" element={<Protected><Media /></Protected>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </ToastProvider>

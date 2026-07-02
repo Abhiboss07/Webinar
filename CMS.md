@@ -270,7 +270,49 @@ per-item editors (add/edit/delete individual trainers, FAQs, modules) are a late
 `VITE_PUBLIC_SITE_URL` set; charts/section UI still need a human eyeball in a browser (no browser in the
 build environment).
 
-## Phase 2.3+ roadmap (from the full brief)
+## Phase 2.3 — Media Library ✅
+
+A full Cloudinary-backed media manager behind a **provider abstraction**, so it also runs on local disk
+in dev (no secrets needed) and Cloudinary drops in for production via env.
+
+**Storage abstraction:** `services/storage/index.js` selects `cloudinaryAdapter` (prod) or `localAdapter`
+(dev/fallback) from `STORAGE_PROVIDER`. Local files are served at `<API_URL>/uploads/…`; Cloudinary
+returns CDN URLs with `f_auto,q_auto` optimisation and a 300×300 thumbnail transformation.
+
+**Model — `media`:** provider, publicId, url/secureUrl/thumbUrl, resourceType (image/video/raw), format,
+bytes, width/height, originalFilename, folder, altText, tags[], `checksum` (sha256 dedupe), uploadedBy.
+
+**APIs added:** `GET /api/media` (search / type + folder filter / paginate, with live usage counts),
+`POST /api/media` (multipart upload, dedupe), `GET /api/media/:id`, `PATCH /api/media/:id`
+(alt/folder/tags), `POST /api/media/:id/replace` (swap file **and rewrite the URL everywhere it's used**
+across published + draft), `DELETE /api/media/:id` (blocked with 409 if in use unless `?force=1`).
+Static `/uploads` route for the local adapter.
+
+**Admin:** Media Library page — drag-and-drop upload with per-file progress, **client-side image
+optimisation** before upload, search/type/folder filters, grid with thumbnails + usage badges +
+dimensions + size, an asset modal (preview, edit alt/folder/tags, copy URL, replace, delete),
+pagination. A reusable **MediaField** now backs the Logo / Hero image / OG image fields in the Content
+editor — pick from the library instead of pasting URLs. Existing string paths keep working.
+
+**Database changes:** new `media` collection (indexes on publicId, checksum, resourceType, folder).
+
+**Verified (24/24 e2e + static serve):** auth guard; upload with real dimension/size/checksum; **dedupe**
+(same bytes → same asset); unsupported-type 400; pdf → raw; search + type/folder filters; **usage count**
+from live content; patch; **replace propagates** the new URL into the draft; delete guard (409 → force);
+`/uploads` serves the file (`200 image/png`); Cloudinary adapter rejects cleanly when unconfigured; admin
+builds clean (49 modules).
+
+**Known limitations:** local adapter does no server-side resize (Cloudinary does in prod; the admin still
+downsizes large images client-side); Cloudinary paths need real credentials to exercise here; browser
+eyeball of the grid/dropzone still pending (no browser in build env).
+
+## Roadmap — remaining modules (revised order)
+
+**2.4 Workshop Builder** (multiple workshops, active-workshop selection — client's daily tool) ·
+**2.5 Registration Manager** (search/filter/sort/CSV+Excel/status/bulk on the `Registration` model) ·
+**2.6 Payment Manager** · **2.7 Analytics** · **2.8 Users & Roles** · **2.9 Settings** ·
+**2.10 Backup / Restore / Audit Logs**. Later: a **Form Builder** so the client can add registration
+fields (e.g. Hospital Name, License Number) without code, rendered on the form and stored per-registration.
 
 Homepage CMS with per-section enable/disable + drag-reorder + preview; **Media Manager** on Cloudinary;
 **Registration Manager** (search/filter/sort/CSV+Excel/status/bulk — built on the `Registration` model

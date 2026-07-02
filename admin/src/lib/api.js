@@ -40,6 +40,39 @@ export const api = {
   history: () => request("/api/site-config/history"),
   revert: (version) => request("/api/site-config/revert", { method: "POST", body: { version } }),
   dashboard: (days = 14) => request(`/api/stats/dashboard?days=${days}`),
+
+  // ---- Media library ----
+  mediaList: (params = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== "" && v != null)).toString();
+    return request(`/api/media${qs ? "?" + qs : ""}`);
+  },
+  mediaGet: (id) => request(`/api/media/${id}`),
+  mediaPatch: (id, body) => request(`/api/media/${id}`, { method: "PATCH", body }),
+  mediaDelete: (id, force = false) => request(`/api/media/${id}${force ? "?force=1" : ""}`, { method: "DELETE" }),
 };
+
+/* Multipart upload with progress (fetch can't report upload progress → XHR). */
+function xhrUpload(path, file, fields, onProgress) {
+  return new Promise((resolve, reject) => {
+    const fd = new FormData();
+    fd.append("file", file, file.name || "upload");
+    for (const [k, v] of Object.entries(fields || {})) fd.append(k, v);
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", BASE + path);
+    if (getToken()) xhr.setRequestHeader("Authorization", `Bearer ${getToken()}`);
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100)); };
+    xhr.onload = () => {
+      let j = null; try { j = JSON.parse(xhr.responseText); } catch (_) { /* */ }
+      if (xhr.status === 401) { setToken(""); window.dispatchEvent(new Event("auth:expired")); }
+      if (xhr.status >= 200 && xhr.status < 300) resolve(j || {});
+      else reject(new Error((j && j.message) || `Upload failed (${xhr.status})`));
+    };
+    xhr.onerror = () => reject(new Error("Network error during upload"));
+    xhr.send(fd);
+  });
+}
+
+export const uploadMedia = (file, fields, onProgress) => xhrUpload("/api/media", file, fields, onProgress);
+export const replaceMedia = (id, file, onProgress) => xhrUpload(`/api/media/${id}/replace`, file, {}, onProgress);
 
 export { BASE };
