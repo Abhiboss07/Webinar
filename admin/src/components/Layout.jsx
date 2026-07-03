@@ -6,7 +6,10 @@ const NAV = [
   { group: "Overview", items: [{ to: "/", label: "Dashboard", ico: "▦", end: true }] },
   {
     group: "Workshops",
-    items: [{ to: "/workshops", label: "Workshops", ico: "🎓" }],
+    items: [
+      { to: "/workshops", label: "Workshops", ico: "🎓" },
+      { to: "/registrations", label: "Registrations", ico: "🧾" },
+    ],
   },
   {
     group: "Website Content",
@@ -54,8 +57,8 @@ export default function Layout({ title, children }) {
           </div>
         ))}
         <div className="nav-group">Coming next</div>
-        <div className="nav-item" style={{ opacity: .5, cursor: "default" }}><span className="ico">◷</span> Registrations</div>
         <div className="nav-item" style={{ opacity: .5, cursor: "default" }}><span className="ico">◷</span> Payments</div>
+        <div className="nav-item" style={{ opacity: .5, cursor: "default" }}><span className="ico">◷</span> Users &amp; Roles</div>
         <div className="nav-item" style={{ opacity: .5, cursor: "default" }}><span className="ico">◷</span> Settings</div>
 
         <div className="sidebar-foot">

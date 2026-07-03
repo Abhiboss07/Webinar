@@ -344,9 +344,40 @@ the Advanced JSON tab for now — dedicated per-item editors come later; per-wor
 dual copies aren't implemented (status + `?workshop=` preview cover the workflow); no cron for scheduled
 publish (go-live is computed at read time, which is sufficient).
 
+## Phase 2.5 — Registration Manager (CRM) ✅
+
+A lightweight CRM over the `Registration` collection (already populated by the live dual-write). The public
+sign-up + payment-verification write paths are **untouched** — this module only reads and curates.
+
+**Model extended (backward-compatible):** `paymentStatus` enum +`Cancelled`/`Refunded`; new flags
+`attended` / `certificateIssued` / `waitlisted`; `notes[]` (text/by/at) and an `activity[]` timeline;
+indexes on `createdAt`, `workshop`, `profession`.
+
+**APIs added (all admin):** `GET /api/registrations` (search across regId/name/email/phone/workshop/
+profession · filters: status/workshop/profession/experience/method/date-range · sort · pagination),
+`GET /stats`, `GET /facets`, `GET /:id`, `PATCH /:id` (status/flags → logged to activity),
+`POST /:id/notes`, `DELETE /:id`, `POST /bulk` (status | delete),
+`GET /export?format=csv|xlsx` (filtered **or** selected `ids`).
+
+**Admin:** stat cards (total / today / paid / pending / revenue / conversion), a data grid with sticky
+header, sortable columns, search + advanced filters, row selection with a bulk bar (set status / delete /
+export selected), CSV + Excel export (real `.xlsx` via exceljs), pagination, skeletons + empty states, and
+a details **drawer** (profile · workshop · payment · status controls · internal notes · activity timeline).
+
+**Database changes:** extra fields + indexes on the existing `registrations` collection; no new collection.
+
+**Verified (21/21 e2e):** auth guard; stats integrity (status counts sum to total; revenue/conversion);
+pagination/total; search; status/profession/date filters; name sort; facets; detail; status patch logs
+activity; flag toggle; notes with author; bulk status (3) + bulk delete (2); CSV export (mime + rows +
+filename); **XLSX export is a valid zip** (PK) with the right mime; selected-rows export; and — crucially —
+the public `/register` flow still lands in the CRM as *Pending*. Admin builds (57 modules).
+
+**Known limitations:** offset pagination (not cursor) — fine at admin scale, gives page totals; no
+virtual scrolling or resizable columns yet (pagination + sticky header cover it); QR attendance /
+certificate generation / messaging are stubs for later modules.
+
 ## Roadmap — remaining modules (revised order)
 
-**2.5 Registration Manager** (search/filter/sort/CSV+Excel/status/bulk on the `Registration` model) ·
 **2.6 Payment Manager** · **2.7 Analytics** · **2.8 User Management** · **2.9 Settings** (incl. a
 **Theme & Branding** section: logo, favicon, colours, fonts, contact, social, footer) · **2.10 Form
 Builder** (client adds registration fields — Hospital Name, License Number… — without code, rendered on

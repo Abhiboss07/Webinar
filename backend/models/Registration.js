@@ -26,15 +26,32 @@ const registrationSchema = new mongoose.Schema(
     source: { type: String, default: "" },        // full URL the sign-up came from
     sourceHost: { type: String, default: "" },     // derived hostname (for breakdowns)
 
-    paymentStatus: { type: String, enum: ["Pending", "Paid", "Failed"], default: "Pending", index: true },
+    // Payment truth (the live flow only ever writes Pending/Paid). Admin can also
+    // set Failed / Cancelled / Refunded from the CRM. Extending the enum is
+    // backward-compatible with existing documents.
+    paymentStatus: { type: String, enum: ["Pending", "Paid", "Failed", "Cancelled", "Refunded"], default: "Pending", index: true },
     orderId: { type: String, default: "" },
     paymentId: { type: String, default: "" },
     paymentMethod: { type: String, default: "" },
     amount: { type: Number, default: 0 },          // rupees (for revenue sums)
     currency: { type: String, default: "INR" },
     transactionTime: { type: Date, default: null },
+
+    // CRM lifecycle flags (independent of payment truth).
+    attended: { type: Boolean, default: false },
+    certificateIssued: { type: Boolean, default: false },
+    waitlisted: { type: Boolean, default: false },
+
+    // Internal admin notes + activity timeline.
+    notes: { type: [{ text: String, by: String, at: { type: Date, default: Date.now } }], default: [] },
+    activity: { type: [{ type: { type: String }, detail: String, by: String, at: { type: Date, default: Date.now } }], default: [] },
   },
   { timestamps: true }
 );
+
+// Sorting/filtering indexes for the CRM grid.
+registrationSchema.index({ createdAt: -1 });
+registrationSchema.index({ workshop: 1 });
+registrationSchema.index({ profession: 1 });
 
 module.exports = mongoose.model("Registration", registrationSchema);

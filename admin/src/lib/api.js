@@ -59,7 +59,32 @@ export const api = {
   workshopDuplicate: (id) => request(`/api/workshops/${id}/duplicate`, { method: "POST" }),
   workshopActivate: (id) => request(`/api/workshops/${id}/activate`, { method: "POST" }),
   workshopStatus: (id, status, scheduledFor) => request(`/api/workshops/${id}/status`, { method: "POST", body: { status, scheduledFor } }),
+
+  // ---- Registrations (CRM) ----
+  regList: (params = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== "" && v != null)).toString();
+    return request(`/api/registrations${qs ? "?" + qs : ""}`);
+  },
+  regStats: () => request("/api/registrations/stats"),
+  regFacets: () => request("/api/registrations/facets"),
+  regGet: (id) => request(`/api/registrations/${id}`),
+  regPatch: (id, body) => request(`/api/registrations/${id}`, { method: "PATCH", body }),
+  regNote: (id, text) => request(`/api/registrations/${id}/notes`, { method: "POST", body: { text } }),
+  regDelete: (id) => request(`/api/registrations/${id}`, { method: "DELETE" }),
+  regBulk: (ids, action, patch) => request("/api/registrations/bulk", { method: "POST", body: { ids, action, patch } }),
 };
+
+/* Authenticated file download (exports are behind auth → fetch a blob, then save). */
+export async function download(path, filename) {
+  const res = await fetch(BASE + path, { headers: getToken() ? { Authorization: `Bearer ${getToken()}` } : {} });
+  if (!res.ok) throw new Error(`Download failed (${res.status})`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename || "download";
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
 
 /* Multipart upload with progress (fetch can't report upload progress → XHR). */
 function xhrUpload(path, file, fields, onProgress) {

@@ -16,6 +16,7 @@ const contentRoutes = require("./routes/contentRoutes");
 const statsRoutes = require("./routes/statsRoutes");
 const mediaRoutes = require("./routes/mediaRoutes");
 const workshopRoutes = require("./routes/workshopRoutes");
+const registrationsRoutes = require("./routes/registrationsRoutes");
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/media", mediaRoutes);
 app.use("/api/workshops", workshopRoutes);
+app.use("/api/registrations", registrationsRoutes);
 app.use("/api", contentRoutes);
 
 // ---- Payment / registration routes (unchanged public flow) ----
