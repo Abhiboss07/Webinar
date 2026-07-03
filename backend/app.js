@@ -21,6 +21,7 @@ const paymentsAdminRoutes = require("./routes/paymentsAdminRoutes");
 const usersRoutes = require("./routes/usersRoutes");
 const rolesRoutes = require("./routes/rolesRoutes");
 const auditRoutes = require("./routes/auditRoutes");
+const settingsRoutes = require("./routes/settingsRoutes");
 
 const app = express();
 
@@ -62,6 +63,7 @@ app.use("/api/payments", paymentsAdminRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/roles", rolesRoutes);
 app.use("/api/audit", auditRoutes);
+app.use("/api/settings", settingsRoutes);
 app.use("/api", contentRoutes);
 
 // ---- Payment / registration routes (unchanged public flow) ----

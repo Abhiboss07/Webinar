@@ -6,20 +6,16 @@
  */
 const { v2: cloudinary } = require("cloudinary");
 const config = require("../../config");
+const provider = require("../settingsProvider");
 
-let configured = false;
-function ensureConfig() {
-  if (configured) return;
-  if (!config.cloudinary.cloudName || !config.cloudinary.apiKey || !config.cloudinary.apiSecret) {
-    throw new Error("Cloudinary is not configured (set CLOUDINARY_CLOUD_NAME / API_KEY / API_SECRET)");
+// Credentials come from the settings provider (admin-managed) → env fallback.
+async function ensureConfig() {
+  const c = await provider.cloudinary();
+  if (!c.cloudName || !c.apiKey || !c.apiSecret) {
+    throw new Error("Cloudinary is not configured (set it in Settings → Media, or CLOUDINARY_* env)");
   }
-  cloudinary.config({
-    cloud_name: config.cloudinary.cloudName,
-    api_key: config.cloudinary.apiKey,
-    api_secret: config.cloudinary.apiSecret,
-    secure: true,
-  });
-  configured = true;
+  cloudinary.config({ cloud_name: c.cloudName, api_key: c.apiKey, api_secret: c.apiSecret, secure: true });
+  return c;
 }
 
 function thumbFor(publicId, resourceType) {
@@ -33,8 +29,8 @@ function thumbFor(publicId, resourceType) {
 }
 
 async function upload(buffer, { filename, folder, resourceType }) {
-  ensureConfig(); // async fn → a config error surfaces as a rejection, not a sync throw
-  const fullFolder = [config.cloudinary.baseFolder, folder || "general"].filter(Boolean).join("/");
+  const c = await ensureConfig(); // rejects if unconfigured
+  const fullFolder = [c.baseFolder, folder || "general"].filter(Boolean).join("/");
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
@@ -65,7 +61,7 @@ async function upload(buffer, { filename, folder, resourceType }) {
 }
 
 async function destroy(publicId, resourceType = "image") {
-  ensureConfig();
+  await ensureConfig();
   await cloudinary.uploader.destroy(publicId, { resource_type: resourceType === "raw" ? "raw" : resourceType });
 }
 

@@ -66,6 +66,17 @@ export const api = {
   roleUpdate: (id, body) => request(`/api/roles/${id}`, { method: "PATCH", body }),
   roleDelete: (id) => request(`/api/roles/${id}`, { method: "DELETE" }),
   audit: (params = {}) => { const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== "" && v != null)).toString(); return request(`/api/audit${qs ? "?" + qs : ""}`); },
+
+  // ---- Settings ----
+  settingsGet: () => request("/api/settings"),
+  settingsUpdate: (section, values) => request("/api/settings", { method: "PATCH", body: { section, values } }),
+  settingsTest: (target) => request("/api/settings/test", { method: "POST", body: { target } }),
+  settingsTestEmail: (to) => request("/api/settings/test-email", { method: "POST", body: { to } }),
+  settingsDiagnostics: () => request("/api/settings/diagnostics"),
+  settingsHistory: () => request("/api/settings/history"),
+  settingsImport: (data) => request("/api/settings/import", { method: "POST", body: { data } }),
+  settingsRestore: () => request("/api/settings/restore-defaults", { method: "POST" }),
+  settingsRevert: (index) => request("/api/settings/revert", { method: "POST", body: { index } }),
   getConfig: () => request("/api/site-config", { auth: false }),
   // Draft workflow.
   getDraft: () => request("/api/site-config/draft"),

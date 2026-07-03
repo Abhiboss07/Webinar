@@ -17,7 +17,7 @@ async function verifyPayment(req, res) {
   // Presence is validated by middleware/validate.js (validateVerify).
 
   // 1) Cryptographic verification — the gate for everything below.
-  const valid = razorpayService.verifySignature({ orderId, paymentId, signature });
+  const valid = await razorpayService.verifySignature({ orderId, paymentId, signature });
   if (!valid) {
     console.warn("[verify-payment] signature mismatch for", regId, orderId);
     return res.status(400).json({ status: "failed", message: "Signature verification failed" });

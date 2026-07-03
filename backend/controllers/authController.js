@@ -10,11 +10,9 @@ const User = require("../models/User");
 const Role = require("../models/Role");
 const Session = require("../models/Session");
 const audit = require("../services/audit");
+const provider = require("../services/settingsProvider");
 const { validatePassword, randomToken, sha256 } = require("../utils/password");
 const { clean, isEmail } = require("../utils/helpers");
-
-const MAX_FAILS = 5;
-const LOCK_MINUTES = 15;
 
 function signAccess(user) {
   return jwt.sign({ sub: String(user._id), email: user.email, typ: "access" }, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
@@ -54,8 +52,11 @@ async function login(req, res) {
 
     const okPw = await user.verifyPassword(password);
     if (!okPw) {
+      const sec = await provider.security(); // admin-configurable lockout policy
+      const maxFails = Number(sec.maxLoginAttempts) || 5;
+      const lockMinutes = Number(sec.lockMinutes) || 15;
       user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
-      if (user.failedLoginAttempts >= MAX_FAILS) { user.lockUntil = new Date(Date.now() + LOCK_MINUTES * 60000); user.failedLoginAttempts = 0; }
+      if (user.failedLoginAttempts >= maxFails) { user.lockUntil = new Date(Date.now() + lockMinutes * 60000); user.failedLoginAttempts = 0; }
       await user.save();
       await audit.record(req, "login.failed", { email, newValue: { attempts: user.failedLoginAttempts } });
       return res.status(401).json({ status: "error", message: "Invalid email or password" });

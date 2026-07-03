@@ -454,13 +454,53 @@ rejection. Admin builds (58 modules).
 admin) until **SMTP is wired in Module 2.8**; 2FA is schema-ready but not enforced; refresh tokens aren't
 rotated on use (revocable via sessions); per-page UI gating hides nav but the backend is the real gate.
 
+## Phase 2.8 — Settings & Site Configuration ✅
+
+The control center that removes the last need to edit `.env`/config. A `settingsProvider` **merges DB
+settings over env**, so with an empty DB everything behaves exactly as before (verified — no regressions),
+and once the client sets a value it overrides env at runtime for **Razorpay, Cloudinary, Google Sheets and
+SMTP** alike. Only `MONGODB_URI` + `JWT_SECRET` stay in env (bootstrap).
+
+**Secrets:** stored **encrypted (AES-256-GCM)** via `cryptoBox` (key from `SETTINGS_ENC_KEY` → JWT_SECRET
+fallback), **write-only** in the API — never returned, shown masked (`••••last4`). Verified a plaintext
+secret never appears in any admin/public/diagnostics/export response, and exports keep ciphertext.
+
+**Sections (10):** General (branding/timezone/currency/colours), Contact, Social (per-link enable),
+Payment (Razorpay test/live keys + mode), Media (Cloudinary), Email (SMTP), Google (Sheets + Analytics/
+GTM), SEO, Security (session/password policy, **configurable login-lockout**, 2FA-ready, maintenance
+mode), Branding logos. Plus **Diagnostics** (green/red health for DB/Mongo/Razorpay/Cloudinary/Sheets/
+SMTP/Node/Memory/Disk/API) and **Backup** (export/import/restore-defaults/version-history + revert).
+
+**Wiring:** `razorpayService`, `storage/cloudinaryAdapter`, `sheetService`, `emailService` (nodemailer),
+and the login-lockout policy all read from the provider (env fallback). Public `GET /api/settings/public`
+exposes the non-secret subset (branding, social, analytics, maintenance) for the frontend.
+
+**APIs added:** `GET /api/settings` (masked) · `GET /api/settings/public` · `PATCH /api/settings` (per
+section) · `POST /api/settings/test` (razorpay/cloudinary/smtp/sheets) · `POST /api/settings/test-email` ·
+`GET /api/settings/diagnostics` · `GET /api/settings/export` · `POST /api/settings/{import,restore-defaults,
+revert}` · `GET /api/settings/history`. All RBAC-gated under `settings` (view/edit); every change audited.
+
+**Database changes:** new `settings` collection (singleton `data` + `history`). No changes to existing
+collections; **Razorpay/registration/Sheets/media flows unchanged** (re-verified 2.3 + 2.5).
+
+**Verified (18/18 e2e + regressions):** provider env-fallback (razorpay/sheets read env when DB empty),
+masked reads, secret encrypted-at-rest + never leaked, blank-secret keeps existing, export ciphertext,
+diagnostics, no-network connection-test error paths, **settings→auth lockout wiring** (lowering
+maxLoginAttempts to 2 locks after 2 fails), backup restore/history/revert, viewer denied (403), audit.
+Admin builds. Added deps: nodemailer.
+
+**Known limitations:** live connection tests for Razorpay/Cloudinary/Sheets and Send-Test-Email need real
+credentials to exercise here (error paths + wiring tested); disk metric best-effort (`fs.statfsSync`);
+public branding/maintenance is exposed via API but the public site's consumption of it (theme colours,
+maintenance screen) is a small follow-up wiring; 2FA remains schema-ready.
+
 ## Roadmap — remaining modules (revised order)
 
-**2.8 Settings & Site Configuration** (SMTP/email, Razorpay & Cloudinary & Google-Sheets config stored
-securely, branding: logo/favicon/colours/fonts, contact, social, SEO — so the client never edits config
-files) · **2.9 Certificate & Attendance (QR)** · **2.10 Email + WhatsApp Automation** ·
-**2.11 Analytics & Reports** · **2.12 Backup, Restore & Audit** · **3.0 AI Assistant**. Cross-cutting: a
-**Form Builder** (client adds registration fields — Hospital Name, License Number… — without code).
+**2.9 Email + WhatsApp Automation** (wire the SMTP now configurable in Settings into invites/receipts +
+WhatsApp templates) · **2.10 Certificate & Attendance (QR)** · **2.11 Analytics & Reports** ·
+**2.12 Backup, Restore & System Health** · **3.0 AI Assistant**. Cross-cutting: a **Form Builder** (client
+adds registration fields — Hospital Name, License Number… — without code) and wiring the public site to
+the new public-settings (theme colours, maintenance screen).
 
 Homepage CMS with per-section enable/disable + drag-reorder + preview; **Media Manager** on Cloudinary;
 **Registration Manager** (search/filter/sort/CSV+Excel/status/bulk — built on the `Registration` model

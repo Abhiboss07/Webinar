@@ -5,6 +5,7 @@
  */
 const config = require("../config");
 const razorpayService = require("../services/razorpayService");
+const provider = require("../services/settingsProvider");
 const { clean, receiptFor } = require("../utils/helpers");
 
 async function createOrder(req, res) {
@@ -21,7 +22,7 @@ async function createOrder(req, res) {
       orderId: order.id,
       amount: order.amount,        // paise
       currency: order.currency,
-      keyId: config.razorpay.keyId, // public key id for Checkout
+      keyId: (await provider.razorpay()).keyId, // public key id (active test/live) for Checkout
     });
   } catch (err) {
     console.error("[create-order] error:", err && (err.error || err.message || err));
