@@ -37,11 +37,17 @@ async function maskedView() {
   return merged;
 }
 
-/** Public, non-secret subset the frontend may consume. */
+/** Public, non-secret subset the frontend + admin may consume (branding/theme). */
 async function publicView() {
   const s = await effective();
   return {
-    general: { siteName: s.general.siteName, primaryColor: s.general.primaryColor, secondaryColor: s.general.secondaryColor, logo: s.general.logo, favicon: s.general.favicon, currency: s.general.currency },
+    general: {
+      siteName: s.general.siteName, primaryColor: s.general.primaryColor, secondaryColor: s.general.secondaryColor,
+      logo: s.general.logo, favicon: s.general.favicon, currency: s.general.currency,
+      typography: s.general.typography, borderRadius: s.general.borderRadius, buttonStyle: s.general.buttonStyle,
+      adminFooter: s.general.adminFooter, poweredBy: s.general.poweredBy,
+    },
+    seo: { title: s.seo.defaultTitle, description: s.seo.metaDescription, keywords: s.seo.keywords, ogImage: s.seo.ogImage, canonical: s.seo.canonicalUrl, robots: s.seo.robots, googleVerification: s.seo.googleVerification, schema: s.seo.schema },
     contact: s.contact,
     social: Object.fromEntries(Object.entries(s.social).filter(([, v]) => v && v.enabled).map(([k, v]) => [k, v.url])),
     analytics: { ga: s.google.analyticsId, gtm: s.google.tagManagerId },

@@ -51,6 +51,11 @@ app.use(cors({
 // Health check (Render uses this).
 app.get("/health", (req, res) => res.json({ status: "ok", env: config.env, configured: config.isConfigured() }));
 
+// SEO: robots.txt + sitemap.xml generated from Settings (white-label).
+const settingsController = require("./controllers/settingsController");
+app.get("/robots.txt", settingsController.robotsTxt);
+app.get("/sitemap.xml", settingsController.sitemapXml);
+
 // Local media files (only used when STORAGE_PROVIDER=local; Cloudinary serves
 // its own CDN URLs in production). CORS-friendly so the site/admin can load them.
 app.use("/uploads", express.static(path.resolve(process.cwd(), config.storage.uploadDir), {

@@ -23,4 +23,9 @@ router.post("/import", ...edit, c.importSettings);
 router.post("/restore-defaults", ...edit, c.restoreDefaults);
 router.post("/revert", ...edit, c.revert);
 
+// Multi-brand branding export/import/reset.
+router.get("/branding/export", ...edit, c.exportBranding);
+router.post("/branding/import", ...edit, c.importBranding);
+router.post("/branding/reset", ...edit, c.resetBranding);
+
 module.exports = router;

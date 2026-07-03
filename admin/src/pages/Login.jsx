@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
+import { useBranding } from "../lib/branding.jsx";
 import { api } from "../lib/api.js";
 
 export default function Login() {
   const { login } = useAuth();
+  const brand = useBranding();
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,8 +41,9 @@ export default function Login() {
     <div className="auth-wrap">
       <form className="auth-card" onSubmit={submit}>
         <div className="brand" style={{ padding: 0, marginBottom: 18 }}>
-          <div className="brand-mark">Y</div>
-          <div><div className="brand-name">Youngness CMS</div><div className="brand-sub">Admin panel</div></div>
+          {brand.logo ? <img src={brand.logo} alt="" style={{ width: 34, height: 34, borderRadius: 9, objectFit: "cover" }} />
+            : <div className="brand-mark">{(brand.siteName || "Y").charAt(0)}</div>}
+          <div><div className="brand-name">{brand.siteName || "Youngness CMS"}</div><div className="brand-sub">Admin panel</div></div>
         </div>
         <h2>Welcome back</h2>
         <p className="sub">Sign in to manage your workshop website.</p>

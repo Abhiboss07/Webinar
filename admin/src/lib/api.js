@@ -69,6 +69,10 @@ export const api = {
 
   // ---- Settings ----
   settingsGet: () => request("/api/settings"),
+  settingsPublic: () => request("/api/settings/public", { auth: false }),
+  brandingExportUrl: "/api/settings/branding/export",
+  brandingImport: (branding) => request("/api/settings/branding/import", { method: "POST", body: { branding } }),
+  brandingReset: () => request("/api/settings/branding/reset", { method: "POST" }),
   settingsUpdate: (section, values) => request("/api/settings", { method: "PATCH", body: { section, values } }),
   settingsTest: (target) => request("/api/settings/test", { method: "POST", body: { target } }),
   settingsTestEmail: (to) => request("/api/settings/test-email", { method: "POST", body: { to } }),

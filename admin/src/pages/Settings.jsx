@@ -13,7 +13,8 @@ const CFG = {
     ["general.siteName", "Site name", "text"], ["general.currency", "Currency", "text", null, true], ["general.timezone", "Timezone", "text", null, true],
     ["general.language", "Language", "text", null, true], ["general.dateFormat", "Date format", "text", null, true],
     ["general.primaryColor", "Primary color", "color", null, true], ["general.secondaryColor", "Secondary color", "color", null, true],
-    ["general.typography", "Typography", "text", null, true], ["general.logo", "Logo", "media"], ["general.favicon", "Favicon", "media"] ] },
+    ["general.typography", "Typography", "text", null, true], ["general.borderRadius", "Border radius", "text", null, true], ["general.buttonStyle", "Button style", "select", ["rounded", "pill", "square"], true],
+    ["general.adminFooter", "Admin footer text", "text"], ["general.logo", "Logo", "media"], ["general.favicon", "Favicon", "media"] ] },
   contact: { label: "Contact", fields: [
     ["contact.phone", "Phone", "text", null, true], ["contact.whatsapp", "WhatsApp", "text", null, true], ["contact.email", "Email", "text", null, true],
     ["contact.supportEmail", "Support email", "text", null, true], ["contact.mapsLink", "Google Maps link", "text"], ["contact.address", "Address", "textarea"] ] },
@@ -164,6 +165,12 @@ function Backup({ onChanged }) {
         <button className="btn ghost" onClick={() => download("/api/settings/export", "settings.json").catch((e) => toast(e.message, "error"))}>Export settings</button>
         <label className="btn ghost" style={{ cursor: "pointer" }}>Import<input type="file" accept="application/json" hidden onChange={(e) => e.target.files[0] && doImport(e.target.files[0])} /></label>
         <button className="btn ghost" style={{ color: "var(--bad)" }} onClick={async () => { if (window.confirm("Restore all settings to defaults?")) { const r = await api.settingsRestore(); toast("Restored defaults", "info"); onChanged(r.settings); load(); } }}>Restore defaults</button>
+      </div>
+      <div className="drawer-sec-t">Branding (white-label)</div>
+      <div className="hstack" style={{ gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
+        <button className="btn ghost" onClick={() => download("/api/settings/branding/export", "branding.json").catch((e) => toast(e.message, "error"))}>Export branding</button>
+        <label className="btn ghost" style={{ cursor: "pointer" }}>Import branding<input type="file" accept="application/json" hidden onChange={async (e) => { const f = e.target.files[0]; if (!f) return; try { const j = JSON.parse(await f.text()); const r = await api.brandingImport(j.branding || j); toast("Branding imported", "success"); onChanged(r.settings); } catch (err) { toast(err.message || "Invalid file", "error"); } }} /></label>
+        <button className="btn ghost" style={{ color: "var(--bad)" }} onClick={async () => { if (window.confirm("Reset branding (logo, colours, SEO, social, contact) to defaults?")) { const r = await api.brandingReset(); toast("Branding reset", "info"); onChanged(r.settings); } }}>Reset branding</button>
       </div>
       <div className="drawer-sec-t">Version history</div>
       {hist.length === 0 ? <div className="muted" style={{ fontSize: 13 }}>No snapshots yet.</div> : hist.map((h) => (

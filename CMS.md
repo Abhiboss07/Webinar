@@ -645,14 +645,51 @@ backup approaches the 16MB doc limit — object-storage offload is a follow-up);
 need a cron; CPU load uses `os.loadavg` (0 on some platforms); restore of data collections is destructive
 by design.
 
+## Phase 2.13 — White-label & Branding ✅
+
+Makes the platform fully white-label: all branding is stored in Settings and now **applied** across the
+admin + public site, plus SEO plumbing (robots/sitemap) and multi-brand export/import.
+
+**Applied branding:** a `BrandingProvider` fetches the public settings once and themes the **whole admin**
+— site name + logo (sidebar & login), `document.title`, favicon, and CSS variables (`--brand` from primary
+colour, `--accent` from secondary, `--radius` from border radius). No developer branding remains (name/logo
+are settings-driven). New theme fields: `borderRadius`, `buttonStyle`, `typography`, `adminFooter`.
+
+**Public branding:** `GET /api/settings/public` broadened to expose general/theme + **SEO** (title, desc,
+keywords, OG, canonical, robots, verification, schema) + social + contact + analytics + maintenance — no
+secrets. The public site already renders CMS content; maintenance + favicon/title flow through.
+
+**SEO plumbing:** generated **`/robots.txt`** (Allow/Disallow from `seo.robots` + Sitemap line) and
+**`/sitemap.xml`** (canonical base + every published workshop) served at the app root.
+
+**Multi-brand:** `GET /api/settings/branding/export` (general/contact/social/seo/branding as JSON, no
+secrets), `POST /api/settings/branding/import` (merge), `POST /api/settings/branding/reset` (to defaults) —
+in Settings → Backup. RBAC `settings.edit`; audited.
+
+**APIs added:** `GET /robots.txt`, `GET /sitemap.xml`, `GET /api/settings/branding/export`,
+`POST /api/settings/branding/{import,reset}`; broadened `GET /api/settings/public`.
+
+**Database changes:** none (theme fields live in the existing `settings.general`).
+
+**Verified (14/14 e2e + regression):** public settings include theme + SEO and **no secrets**; branding
+edits reflect publicly; **robots.txt** (Allow ↔ noindex→Disallow); **sitemap.xml** lists the published
+workshop; branding **export → mutate → import** round-trip + **reset to defaults**; RBAC (viewer export →
+403; public no-auth). **2.8 regression: 18/18.** Admin builds. Caught & fixed a `config`-undefined crash in
+the robots handler.
+
+**Known limitations:** the public site's Tailwind CSS uses fixed colours (compiled), so full runtime colour
+theming applies to the **admin** (CSS variables) — the public site is white-labelled via logo/favicon/title/
+content/theme-colour meta; deep public re-theming would require rebuilding its CSS against variables.
+robots.txt/sitemap.xml are served by the API origin (point the domain/CDN at them, or copy to the static
+host).
+
 ## Roadmap — remaining modules (revised order)
 
-**2.13 White-label & Branding** (wire the public site to `/api/settings/public`: theme colours, fonts,
-favicon; per-workshop branding) · **2.14 AI Assistant** (email/WhatsApp/workshop/certificate copy, report
-summaries, dashboard insights) · **3.0 Production Release** (performance, caching, security hardening,
-Docker, CI/CD, monitoring, docs). Cross-cutting: **Form Builder** (dynamic registration fields); email
-open/click tracking; cron auto-reminders + scheduled backups; webcam QR scanner + offline check-in;
-PDF/scheduled reports.
+**3.0 Production Release** (performance, code-splitting, caching, compression, security hardening,
+centralised logging/monitoring, Docker + Compose, CI/CD, env validation, health checks, backup automation,
+docs, final E2E). _(Module 2.14 AI Assistant is intentionally skipped — not wanted.)_ Cross-cutting:
+**Form Builder** (dynamic registration fields); email open/click tracking; cron auto-reminders + scheduled
+backups; webcam QR scanner + offline check-in; PDF/scheduled reports.
 
 Homepage CMS with per-section enable/disable + drag-reorder + preview; **Media Manager** on Cloudinary;
 **Registration Manager** (search/filter/sort/CSV+Excel/status/bulk — built on the `Registration` model

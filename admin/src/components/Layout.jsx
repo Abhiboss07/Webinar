@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth.jsx";
+import { useBranding } from "../lib/branding.jsx";
 
 // Each item names the resource it needs `view` on; the nav hides what you can't see.
 const NAV = [
@@ -47,6 +48,7 @@ function useTheme() {
 
 export default function Layout({ title, children }) {
   const { user, logout, can, isSuperAdmin, roleName } = useAuth();
+  const brand = useBranding();
   const nav = useNavigate();
   const [theme, setTheme] = useTheme();
   const [open, setOpen] = useState(false);
@@ -57,10 +59,11 @@ export default function Layout({ title, children }) {
     <div className="shell">
       <aside className={`sidebar ${open ? "open" : ""}`}>
         <div className="brand">
-          <div className="brand-mark">Y</div>
+          {brand.logo ? <img src={brand.logo} alt="" style={{ width: 34, height: 34, borderRadius: 9, objectFit: "cover" }} />
+            : <div className="brand-mark">{(brand.siteName || "Y").charAt(0)}</div>}
           <div>
-            <div className="brand-name">Youngness CMS</div>
-            <div className="brand-sub">Workshop admin</div>
+            <div className="brand-name">{brand.siteName || "Youngness CMS"}</div>
+            <div className="brand-sub">Admin</div>
           </div>
         </div>
         {NAV.map((sec) => {

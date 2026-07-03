@@ -1,6 +1,7 @@
 "use strict";
 const os = require("os");
 const fs = require("fs");
+const config = require("../config");
 const Razorpay = require("razorpay");
 const { v2: cloudinary } = require("cloudinary");
 const Settings = require("../models/Settings");
@@ -190,4 +191,63 @@ async function revert(req, res) {
   }
 }
 
-module.exports = { getAdmin, getPublicSettings, update, testConnection, sendTestEmail, diagnostics, exportSettings, importSettings, restoreDefaults, history, revert };
+/* ---- White-label: robots.txt / sitemap.xml (public) ---- */
+async function robotsTxt(req, res) {
+  try {
+    const s = await provider.publicView();
+    const base = String(s.seo.canonical || config.storage.publicBaseUrl).replace(/\/$/, "");
+    const noindex = /noindex/i.test(s.seo.robots || "");
+    res.type("text/plain").send(["User-agent: *", noindex ? "Disallow: /" : "Allow: /", `Sitemap: ${base}/sitemap.xml`].join("\n") + "\n");
+  } catch (err) { res.type("text/plain").send("User-agent: *\nAllow: /\n"); }
+}
+async function sitemapXml(req, res) {
+  try {
+    const s = await provider.publicView();
+    const base = String(s.seo.canonical || config.storage.publicBaseUrl).replace(/\/$/, "");
+    const Workshop = require("../models/Workshop");
+    const ws = await Workshop.find({ status: "published" }).select("slug updatedAt").lean();
+    const urls = [`  <url><loc>${base}/</loc></url>`,
+      ...ws.map((w) => `  <url><loc>${base}/?workshop=${encodeURIComponent(w.slug)}</loc><lastmod>${new Date(w.updatedAt).toISOString().slice(0, 10)}</lastmod></url>`)];
+    res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>\n`);
+  } catch (err) { res.status(500).type("application/xml").send('<?xml version="1.0"?><urlset/>'); }
+}
+
+/* ---- Multi-brand: export / import / reset branding (no secrets involved) ---- */
+const BRANDING_SECTIONS = ["general", "contact", "social", "seo", "branding"];
+async function exportBranding(req, res) {
+  const view = await provider.maskedView();
+  const out = {}; for (const sec of BRANDING_SECTIONS) out[sec] = view[sec];
+  await audit.record(req, "branding.export", { resource: "settings" });
+  res.setHeader("Content-Type", "application/json");
+  res.setHeader("Content-Disposition", `attachment; filename="branding-${new Date().toISOString().slice(0, 10)}.json"`);
+  return res.send(JSON.stringify({ version: 1, branding: out }, null, 2));
+}
+async function importBranding(req, res) {
+  try {
+    const b = (req.body && (req.body.branding || req.body)) || {};
+    const doc = await Settings.getSingleton();
+    const data = doc.data || {};
+    doc.history.unshift({ data: JSON.parse(JSON.stringify(data)), at: new Date(), by: (req.user && req.user.email) || "" });
+    doc.history = doc.history.slice(0, Settings.HISTORY_CAP);
+    for (const sec of BRANDING_SECTIONS) if (b[sec] && typeof b[sec] === "object") data[sec] = deepMerge(data[sec] || {}, b[sec]);
+    doc.data = data; doc.markModified("data"); doc.markModified("history"); await doc.save();
+    provider.invalidate();
+    await audit.record(req, "branding.import", { resource: "settings" });
+    return res.json({ status: "success", settings: await provider.maskedView() });
+  } catch (err) { return res.status(500).json({ status: "error", message: "Branding import failed" }); }
+}
+async function resetBranding(req, res) {
+  try {
+    const doc = await Settings.getSingleton();
+    const data = doc.data || {};
+    doc.history.unshift({ data: JSON.parse(JSON.stringify(data)), at: new Date(), by: (req.user && req.user.email) || "" });
+    doc.history = doc.history.slice(0, Settings.HISTORY_CAP);
+    for (const sec of BRANDING_SECTIONS) delete data[sec]; // DEFAULTS re-apply via merge
+    doc.data = data; doc.markModified("data"); doc.markModified("history"); await doc.save();
+    provider.invalidate();
+    await audit.record(req, "branding.reset", { resource: "settings" });
+    return res.json({ status: "success", settings: await provider.maskedView() });
+  } catch (err) { return res.status(500).json({ status: "error", message: "Branding reset failed" }); }
+}
+
+module.exports = { getAdmin, getPublicSettings, update, testConnection, sendTestEmail, diagnostics, exportSettings, importSettings, restoreDefaults, history, revert, robotsTxt, sitemapXml, exportBranding, importBranding, resetBranding };

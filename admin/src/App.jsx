@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "./lib/auth.jsx";
 import { DraftProvider } from "./lib/draft.jsx";
+import { BrandingProvider } from "./lib/branding.jsx";
 import { ToastProvider } from "./components/ui.jsx";
 import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
@@ -49,6 +50,7 @@ function ContentArea() {
 export default function App() {
   return (
     <BrowserRouter>
+      <BrandingProvider>
       <AuthProvider>
         <ToastProvider>
           <Routes>
@@ -77,6 +79,7 @@ export default function App() {
           </Routes>
         </ToastProvider>
       </AuthProvider>
+      </BrandingProvider>
     </BrowserRouter>
   );
 }

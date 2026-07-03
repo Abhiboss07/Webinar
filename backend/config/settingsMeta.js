@@ -4,7 +4,7 @@
  * Secrets are stored encrypted and never returned by the API (masked instead).
  */
 const DEFAULTS = {
-  general: { siteName: "Youngness Institute", timezone: "Asia/Kolkata", language: "en", dateFormat: "DD MMM YYYY", currency: "INR", primaryColor: "#1e3d52", secondaryColor: "#c8862b", typography: "DM Sans", logo: "", favicon: "" },
+  general: { siteName: "Youngness Institute", timezone: "Asia/Kolkata", language: "en", dateFormat: "DD MMM YYYY", currency: "INR", primaryColor: "#1e3d52", secondaryColor: "#c8862b", typography: "DM Sans", borderRadius: "14px", buttonStyle: "rounded", logo: "", favicon: "", adminFooter: "", poweredBy: false },
   contact: { phone: "", whatsapp: "", email: "", supportEmail: "", address: "", mapsLink: "" },
   social: { facebook: { url: "", enabled: false }, instagram: { url: "", enabled: false }, linkedin: { url: "", enabled: false }, youtube: { url: "", enabled: false }, twitter: { url: "", enabled: false } },
   payment: { provider: "razorpay", mode: "test", test: { keyId: "", keySecret: "", webhookSecret: "" }, live: { keyId: "", keySecret: "", webhookSecret: "" } },
