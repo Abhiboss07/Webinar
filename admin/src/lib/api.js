@@ -123,6 +123,22 @@ export const api = {
   anCommunication: () => request("/api/analytics/communication"),
   anWorkshops: () => request("/api/analytics/workshops"),
 
+  // ---- System Administration ----
+  sysOverview: () => request("/api/system/overview"),
+  sysHealth: () => request("/api/system/health"),
+  sysStorage: () => request("/api/system/storage"),
+  sysQueue: () => request("/api/system/queue"),
+  sysLogs: (p = {}) => { const qs = new URLSearchParams(Object.entries(p).filter(([, v]) => v !== "" && v != null)).toString(); return request(`/api/system/logs${qs ? "?" + qs : ""}`); },
+  sysEnvironment: () => request("/api/system/environment"),
+  sysSecurity: () => request("/api/system/security"),
+  sysNotifications: () => request("/api/system/notifications"),
+  sysMaintenance: () => request("/api/system/maintenance"),
+  sysSetMaintenance: (enabled, message) => request("/api/system/maintenance", { method: "POST", body: { enabled, message } }),
+  sysBackups: () => request("/api/system/backups"),
+  sysBackup: (includeData) => request("/api/system/backups", { method: "POST", body: { includeData } }),
+  sysBackupVerify: (id) => request(`/api/system/backups/${id}/verify`, { method: "POST" }),
+  sysRestore: (id) => request(`/api/system/backups/${id}/restore`, { method: "POST", body: { confirm: true } }),
+
   getConfig: () => request("/api/site-config", { auth: false }),
   // Draft workflow.
   getDraft: () => request("/api/site-config/draft"),

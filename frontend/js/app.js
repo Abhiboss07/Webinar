@@ -3,7 +3,7 @@
    interactions, and orchestrates the registration → payment → success flow.
    Section markup lives in /sections; content lives in config/workshop-config.js.
    ========================================================================== */
-import { C, $, loadConfig } from "./config.js";
+import { C, $, loadConfig, maintenance } from "./config.js";
 import { Components as T } from "../sections/index.js";
 import { initPopup } from "./popup.js";
 import { initForm } from "./form.js";
@@ -252,6 +252,16 @@ function showSuccessView(data, info) {
    loadConfig() resolved. */
 async function boot() {
   await loadConfig();
+  // Maintenance mode (toggled from the admin) — show a message instead of the
+  // site. ?preview=1 bypasses it so admins can still preview.
+  const isPreview = new URLSearchParams(location.search).get("preview") === "1";
+  if (maintenance && maintenance.enabled && !isPreview) {
+    document.body.innerHTML = `<div style="max-width:560px;margin:16vh auto;padding:0 24px;text-align:center;font-family:system-ui,sans-serif;color:#1e3d52">
+      <div style="font-size:44px">🛠️</div>
+      <h1 style="font-size:26px;margin:12px 0">We'll be right back</h1>
+      <p style="color:#5b6675;font-size:16px">${(maintenance.message || "We're doing some maintenance. Please check back shortly.").replace(/</g, "&lt;")}</p></div>`;
+    return;
+  }
   applySeo();
   render();
   initReveal();

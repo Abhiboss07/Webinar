@@ -17,6 +17,7 @@
 const SiteConfig = require("../models/SiteConfig");
 const Workshop = require("../models/Workshop");
 const audit = require("../services/audit");
+const provider = require("../services/settingsProvider");
 const { normalizeManifest } = require("../config/sections");
 
 function isPlainObject(v) {
@@ -57,11 +58,15 @@ async function getPublic(req, res) {
     const workshop = await resolveWorkshop(String(req.query.workshop || "").trim());
     const data = compose(base, workshop);
 
+    let maintenance = null;
+    try { maintenance = (await provider.security()).maintenance; } catch (_) { /* optional */ }
+
     res.set("Cache-Control", preview ? "no-store" : "public, max-age=30, stale-while-revalidate=120");
     return res.json({
       status: "success",
       data,
       preview,
+      maintenance,
       activeWorkshop: workshop ? { slug: workshop.slug, title: workshop.title, status: workshop.status } : null,
       updatedAt: doc.publishedAt || doc.updatedAt,
     });

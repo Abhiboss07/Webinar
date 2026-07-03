@@ -50,6 +50,7 @@ const clone = (o) => (typeof structuredClone === "function" ? structuredClone(o)
 /* C starts as the interpolated fallback so nothing is ever undefined during the
    initial fetch. loadConfig() replaces it with the CMS content on success. */
 export let C = interpolate(clone(FALLBACK_CONFIG));
+export let maintenance = null; // { enabled, message } from the CMS, if set
 export const $ = (id) => document.getElementById(id);
 
 /* Fetch live content from the CMS. On any failure, keeps the bundled fallback so
@@ -67,6 +68,7 @@ export async function loadConfig() {
     const res = await fetch(url, { headers: { Accept: "application/json" } });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const json = await res.json();
+    if (json && json.maintenance) maintenance = json.maintenance;
     const data = json && json.data ? json.data : json;
     if (data && typeof data === "object" && data.workshop) {
       C = interpolate(data);

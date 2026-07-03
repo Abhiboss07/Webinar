@@ -7,7 +7,7 @@
  */
 const RESOURCES = [
   "dashboard", "homepage_cms", "media", "workshops", "registrations",
-  "payments", "analytics", "communication", "events", "users", "roles", "settings", "api_keys", "backups",
+  "payments", "analytics", "communication", "events", "users", "roles", "settings", "system", "api_keys", "backups",
 ];
 
 const ACTIONS = ["view", "create", "edit", "delete", "publish", "export", "refund", "approve", "manage_users"];
@@ -33,7 +33,7 @@ const DEFAULT_ROLES = [
       communication: ["view", "create", "edit", "delete", "export"],
       events: ["view", "create", "edit", "delete", "export"],
       users: ["view", "create", "edit", "delete", "manage_users"], settings: ["view", "edit"],
-      api_keys: ["view", "edit"], backups: ["view", "create"],
+      system: ["view", "edit"], api_keys: ["view", "edit"], backups: ["view", "create"],
     }),
   },
   {

@@ -20,6 +20,7 @@ import Attendance from "./pages/Attendance.jsx";
 import Certificates from "./pages/Certificates.jsx";
 import Verify from "./pages/Verify.jsx";
 import Analytics from "./pages/Analytics.jsx";
+import System from "./pages/System.jsx";
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -66,6 +67,7 @@ export default function App() {
             <Route path="/users" element={<Protected><Users /></Protected>} />
             <Route path="/roles" element={<Protected><Roles /></Protected>} />
             <Route path="/audit" element={<Protected><Audit /></Protected>} />
+            <Route path="/system" element={<Protected><System /></Protected>} />
             <Route path="/settings" element={<Protected><Settings /></Protected>} />
             <Route path="/communication" element={<Protected><Communication /></Protected>} />
             <Route path="/attendance" element={<Protected><Attendance /></Protected>} />

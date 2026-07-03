@@ -31,6 +31,7 @@ const NAV = [
       { to: "/roles", label: "Roles & Permissions", ico: "🔑", res: "roles", superOnly: true },
       { to: "/audit", label: "Audit Log", ico: "📜", res: "users" },
       { to: "/settings", label: "Settings", ico: "⚙", res: "settings" },
+      { to: "/system", label: "System", ico: "🖥", res: "system" },
     ],
   },
 ];

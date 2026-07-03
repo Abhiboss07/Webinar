@@ -604,15 +604,55 @@ range-truncation bug (daily series is now span-clamped). Admin builds.
 certificate counts and email open/click need tracking hooks (fields exist, not yet incremented); forecast
 is a simple 7-day moving-average projection; PDF/print export and scheduled/saved reports are follow-ups.
 
+## Phase 2.12 — System Administration ✅
+
+An operational control center that unifies + extends the diagnostics/backup/maintenance pieces from prior
+modules. RBAC resource `system` (admin/super); restore is **Super-Admin only**.
+
+**Overview & Health:** server/API/DB status, **DB ping response time**, storage (upload bytes/files),
+memory/CPU/uptime, active users + sessions, node/Mongo versions; per-service health with timings.
+**Storage Manager:** Media count/bytes, by-type, largest files, duplicate groups, local-disk usage.
+**Queue Monitor:** message counts by status/channel, failed jobs, pause flag, health. **Logs:** unified
+viewer over AuditLog (auth/payment), Message (email/whatsapp) and a new persisted **SystemLog** (app/error,
+soft-capped), with search. **Security:** failed logins (24h), locked accounts, active sessions, password
+policy. **Environment:** build/node/Mongo versions, start time, env validation + missing-config detection.
+**Notifications:** derived alerts (queue failures, unverified backups, low storage, maintenance-on,
+DB down). **Maintenance mode:** toggle + message, **wired to the public site** (shows a maintenance screen;
+`?preview=1` bypasses).
+
+**Backup & Restore:** full config (+ optional data) backup stored as a **JSON string** with a deterministic
+**sha256 checksum**; history, download, **verify**, and **restore** — which **never touches Users /
+Sessions / AuditLog** (can't lock admins out or wipe the trail) and requires `confirm:true`. Mongoose casts
+types back on restore. Plus **audit CSV export**.
+
+**APIs added:** `/api/system/{overview,health,storage,queue,logs,environment,security,notifications,
+maintenance(get/post),audit/export,backups(list/create),backups/:id/{download,verify,restore},restore}`.
+Error handler now persists 500s to SystemLog. **Admin:** System page with 9 tabs; public site honors
+maintenance mode.
+
+**Database changes:** new `backups`, `systemlogs` collections. Public `/api/site-config` response gains a
+`maintenance` field (data unchanged — 2.4 byte-identical compose re-verified).
+
+**Verified (24/24 e2e + regression):** RBAC (viewer → 403; admin ok); overview DB-ping/memory; health;
+environment; storage/queue/security/notifications; unified logs (+categories); **maintenance toggles the
+public site-config flag**; **backup → verify → mutate → restore** round-trip (brand name reverts);
+restore is Super-Admin-only (non-super → 403) and needs confirm (→ 400); audit of backup/restore/
+maintenance; audit CSV export. Admin builds. Caught & fixed a backup-checksum determinism bug (string
+storage).
+
+**Known limitations:** backups are stored inline in Mongo (fine at workshop scale; a very large `+data`
+backup approaches the 16MB doc limit — object-storage offload is a follow-up); scheduled/automatic backups
+need a cron; CPU load uses `os.loadavg` (0 on some platforms); restore of data collections is destructive
+by design.
+
 ## Roadmap — remaining modules (revised order)
 
-**2.12 System Administration** (backup/restore, health monitoring, audit viewer, storage/queue/log
-viewers, error reports) · **2.13 White-label & Branding** (wire the public site to `/api/settings/public`:
-theme colours, fonts, favicon, maintenance screen) · **2.14 AI Assistant** (email/WhatsApp/workshop/
-certificate copy, report summaries, dashboard insights) · **3.0 Production Release** (performance, caching,
-security hardening, Docker, CI/CD, monitoring, docs). Cross-cutting: **Form Builder** (dynamic registration
-fields); email open/click tracking; cron auto-reminders; webcam QR scanner + offline check-in; PDF/scheduled
-reports.
+**2.13 White-label & Branding** (wire the public site to `/api/settings/public`: theme colours, fonts,
+favicon; per-workshop branding) · **2.14 AI Assistant** (email/WhatsApp/workshop/certificate copy, report
+summaries, dashboard insights) · **3.0 Production Release** (performance, caching, security hardening,
+Docker, CI/CD, monitoring, docs). Cross-cutting: **Form Builder** (dynamic registration fields); email
+open/click tracking; cron auto-reminders + scheduled backups; webcam QR scanner + offline check-in;
+PDF/scheduled reports.
 
 Homepage CMS with per-section enable/disable + drag-reorder + preview; **Media Manager** on Cloudinary;
 **Registration Manager** (search/filter/sort/CSV+Excel/status/bulk — built on the `Registration` model

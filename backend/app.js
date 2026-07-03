@@ -25,6 +25,7 @@ const settingsRoutes = require("./routes/settingsRoutes");
 const commRoutes = require("./routes/commRoutes");
 const eventsRoutes = require("./routes/eventsRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const systemRoutes = require("./routes/systemRoutes");
 
 const app = express();
 
@@ -70,6 +71,7 @@ app.use("/api/settings", settingsRoutes);
 app.use("/api/comm", commRoutes);
 app.use("/api", eventsRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/system", systemRoutes);
 app.use("/api", contentRoutes);
 
 // ---- Payment / registration routes (unchanged public flow) ----
