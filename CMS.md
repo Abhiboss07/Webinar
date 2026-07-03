@@ -376,12 +376,47 @@ the public `/register` flow still lands in the CRM as *Pending*. Admin builds (5
 virtual scrolling or resizable columns yet (pagination + sticky header cover it); QR attendance /
 certificate generation / messaging are stubs for later modules.
 
+## Phase 2.6 — Payment Manager ✅
+
+A financial dashboard over the same `Registration` records (which already hold order/payment/amount/
+method/status). Read + admin actions only — the public `verifyPayment`/Razorpay flow is untouched, and
+**no secret ever appears in a response** (verified).
+
+**Model:** +`refundId` / `refundAmount` / `refundedAt` on `registrations` (set only by the admin refund
+action). `razorpayService.refundPayment()` added.
+
+**APIs added (all admin; refund is admin-role only):** `GET /api/payments` (search + status/workshop/
+method/amount-range/date filters + sort + pagination), `GET /stats` (revenue / today / successful /
+pending / failed / refunded / avg-ticket / conversion), `GET /analytics` (revenue-by-day, revenue-by-
+workshop, success%, refund%), `GET /:id`, `POST /:id/verify` (re-check against gateway → reconcile),
+`POST /:id/status` (Paid/Failed override), `POST /:id/refund` (real gateway refund **or** manual),
+`GET /:id/receipt` + `/:id/invoice` (PDF via pdfkit), `GET /export?format=csv|xlsx`.
+
+**Admin:** Payments page — 8 financial stat cards, revenue-over-time + revenue-by-workshop charts, filters
+(status/workshop/method/amount-range/date), payment table, CSV/Excel export, and a details **drawer**
+(customer · payment · verification · activity) with actions: retry verification, mark paid/failed, refund
+(gateway or manual, with confirm), download receipt/invoice, copy IDs.
+
+**Database changes:** 3 refund fields on `registrations`. No new collection.
+
+**Verified (21/21 e2e):** auth guard; stats (revenue/avg-ticket/conversion consistent); analytics (14-day
+series, workshop split, success/refund rates); list + gateway tag; status/amount-range filters;
+**no key-secret/signature/jwt in responses**; detail verified flag; manual refund → Refunded (+ guard that
+non-Paid → 400); retry-verify without a payment id → 400; **receipt + invoice PDFs** (`%PDF`); CSV (payment
+columns) + XLSX (valid zip) export. Admin builds (60 modules).
+
+**Known limitations:** gateway refund + retry-verify against a *captured* payment need **live Razorpay
+credentials** to exercise (logic implemented + guarded; tested via the manual/no-network paths); PDF export
+of the whole list isn't built (per-payment receipt/invoice + CSV/XLSX cover it); offset (not cursor)
+pagination.
+
 ## Roadmap — remaining modules (revised order)
 
-**2.6 Payment Manager** · **2.7 Analytics** · **2.8 User Management** · **2.9 Settings** (incl. a
-**Theme & Branding** section: logo, favicon, colours, fonts, contact, social, footer) · **2.10 Form
-Builder** (client adds registration fields — Hospital Name, License Number… — without code, rendered on
-the form and stored per-registration) · **2.11 Email & WhatsApp Templates** · **2.12 Backup / Audit Logs**.
+**2.7 User & Role Management** · **2.8 Email + WhatsApp Automation** · **2.9 Certificate Generator** ·
+**2.10 Attendance & QR Scanner** · **2.11 Analytics & Reports** · **2.12 Audit Logs & Backup** ·
+**3.0 AI Assistant**. Cross-cutting: a **Theme & Branding** settings section (logo, favicon, colours,
+fonts, contact, social, footer) and a **Form Builder** (client adds registration fields — Hospital Name,
+License Number… — without code, rendered on the form and stored per-registration).
 
 Homepage CMS with per-section enable/disable + drag-reorder + preview; **Media Manager** on Cloudinary;
 **Registration Manager** (search/filter/sort/CSV+Excel/status/bulk — built on the `Registration` model

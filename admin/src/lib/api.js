@@ -72,6 +72,18 @@ export const api = {
   regNote: (id, text) => request(`/api/registrations/${id}/notes`, { method: "POST", body: { text } }),
   regDelete: (id) => request(`/api/registrations/${id}`, { method: "DELETE" }),
   regBulk: (ids, action, patch) => request("/api/registrations/bulk", { method: "POST", body: { ids, action, patch } }),
+
+  // ---- Payments ----
+  payList: (params = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== "" && v != null)).toString();
+    return request(`/api/payments${qs ? "?" + qs : ""}`);
+  },
+  payStats: () => request("/api/payments/stats"),
+  payAnalytics: (days = 14) => request(`/api/payments/analytics?days=${days}`),
+  payGet: (id) => request(`/api/payments/${id}`),
+  payVerify: (id) => request(`/api/payments/${id}/verify`, { method: "POST" }),
+  payMark: (id, status) => request(`/api/payments/${id}/status`, { method: "POST", body: { status } }),
+  payRefund: (id, body) => request(`/api/payments/${id}/refund`, { method: "POST", body }),
 };
 
 /* Authenticated file download (exports are behind auth → fetch a blob, then save). */

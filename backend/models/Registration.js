@@ -37,6 +37,11 @@ const registrationSchema = new mongoose.Schema(
     currency: { type: String, default: "INR" },
     transactionTime: { type: Date, default: null },
 
+    // Refund tracking (Payment Manager). Set only via admin refund action.
+    refundId: { type: String, default: "" },
+    refundAmount: { type: Number, default: 0 },
+    refundedAt: { type: Date, default: null },
+
     // CRM lifecycle flags (independent of payment truth).
     attended: { type: Boolean, default: false },
     certificateIssued: { type: Boolean, default: false },

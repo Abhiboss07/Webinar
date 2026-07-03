@@ -22,28 +22,46 @@ const COLUMNS = [
   { key: "createdAt", header: "Registered At", get: (r) => (r.createdAt ? new Date(r.createdAt).toISOString() : "") },
 ];
 
+// Payment-focused column set (Payment Manager export).
+const PAYMENT_COLUMNS = [
+  { key: "paymentId", header: "Payment ID", get: (r) => r.paymentId },
+  { key: "orderId", header: "Order ID", get: (r) => r.orderId },
+  { key: "regId", header: "Registration ID", get: (r) => r.regId },
+  { key: "fullName", header: "Participant", get: (r) => r.fullName },
+  { key: "workshop", header: "Workshop", get: (r) => r.workshop },
+  { key: "amount", header: "Amount", get: (r) => r.amount || 0 },
+  { key: "currency", header: "Currency", get: (r) => r.currency || "INR" },
+  { key: "paymentMethod", header: "Method", get: (r) => r.paymentMethod },
+  { key: "gateway", header: "Gateway", get: () => "Razorpay" },
+  { key: "paymentStatus", header: "Status", get: (r) => r.paymentStatus },
+  { key: "createdAt", header: "Created", get: (r) => (r.createdAt ? new Date(r.createdAt).toISOString() : "") },
+  { key: "transactionTime", header: "Paid Time", get: (r) => (r.transactionTime ? new Date(r.transactionTime).toISOString() : "") },
+  { key: "refundId", header: "Refund ID", get: (r) => r.refundId },
+  { key: "refundAmount", header: "Refund Amount", get: (r) => r.refundAmount || 0 },
+];
+
 function csvCell(v) {
   const s = v == null ? "" : String(v);
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
 /** CSV string (BOM-prefixed so Excel reads UTF-8 correctly). */
-function buildCsv(rows) {
-  const head = COLUMNS.map((c) => csvCell(c.header)).join(",");
-  const body = rows.map((r) => COLUMNS.map((c) => csvCell(c.get(r))).join(",")).join("\n");
+function buildCsv(rows, cols = COLUMNS) {
+  const head = cols.map((c) => csvCell(c.header)).join(",");
+  const body = rows.map((r) => cols.map((c) => csvCell(c.get(r))).join(",")).join("\n");
   return "﻿" + head + "\n" + body + "\n";
 }
 
 /** XLSX buffer with a styled header row. */
-async function buildXlsx(rows) {
+async function buildXlsx(rows, cols = COLUMNS, sheetName = "Registrations") {
   const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet("Registrations");
-  ws.columns = COLUMNS.map((c) => ({ header: c.header, key: c.key, width: Math.max(12, c.header.length + 2) }));
+  const ws = wb.addWorksheet(sheetName);
+  ws.columns = cols.map((c) => ({ header: c.header, key: c.key, width: Math.max(12, c.header.length + 2) }));
   ws.getRow(1).font = { bold: true };
   ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFEFEF" } };
-  rows.forEach((r) => ws.addRow(COLUMNS.reduce((o, c) => ((o[c.key] = c.get(r)), o), {})));
-  ws.autoFilter = { from: "A1", to: `${String.fromCharCode(64 + COLUMNS.length)}1` };
+  rows.forEach((r) => ws.addRow(cols.reduce((o, c) => ((o[c.key] = c.get(r)), o), {})));
+  ws.autoFilter = { from: "A1", to: `${String.fromCharCode(64 + cols.length)}1` };
   return wb.xlsx.writeBuffer();
 }
 
-module.exports = { buildCsv, buildXlsx, COLUMNS };
+module.exports = { buildCsv, buildXlsx, COLUMNS, PAYMENT_COLUMNS };

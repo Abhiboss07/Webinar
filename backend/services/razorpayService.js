@@ -48,4 +48,14 @@ async function fetchPayment(paymentId) {
   }
 }
 
-module.exports = { createOrder, verifySignature, fetchPayment };
+/**
+ * Refund a captured payment via the gateway. `amountPaise` optional (full refund
+ * if omitted). Throws on gateway error so the caller can surface it — this moves
+ * real money, so it is only ever invoked from an authenticated admin action.
+ */
+async function refundPayment(paymentId, amountPaise) {
+  const opts = amountPaise ? { amount: amountPaise } : {};
+  return instance.payments.refund(paymentId, opts);
+}
+
+module.exports = { createOrder, verifySignature, fetchPayment, refundPayment };
