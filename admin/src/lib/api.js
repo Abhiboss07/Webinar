@@ -49,6 +49,16 @@ export const api = {
   mediaGet: (id) => request(`/api/media/${id}`),
   mediaPatch: (id, body) => request(`/api/media/${id}`, { method: "PATCH", body }),
   mediaDelete: (id, force = false) => request(`/api/media/${id}${force ? "?force=1" : ""}`, { method: "DELETE" }),
+
+  // ---- Workshops ----
+  workshops: (status = "") => request(`/api/workshops${status ? `?status=${status}` : ""}`),
+  workshop: (id) => request(`/api/workshops/${id}`),
+  workshopCreate: (body) => request("/api/workshops", { method: "POST", body }),
+  workshopUpdate: (id, body) => request(`/api/workshops/${id}`, { method: "PUT", body }),
+  workshopDelete: (id) => request(`/api/workshops/${id}`, { method: "DELETE" }),
+  workshopDuplicate: (id) => request(`/api/workshops/${id}/duplicate`, { method: "POST" }),
+  workshopActivate: (id) => request(`/api/workshops/${id}/activate`, { method: "POST" }),
+  workshopStatus: (id, status, scheduledFor) => request(`/api/workshops/${id}/status`, { method: "POST", body: { status, scheduledFor } }),
 };
 
 /* Multipart upload with progress (fetch can't report upload progress → XHR). */

@@ -5,6 +5,10 @@ import { useAuth } from "../lib/auth.jsx";
 const NAV = [
   { group: "Overview", items: [{ to: "/", label: "Dashboard", ico: "▦", end: true }] },
   {
+    group: "Workshops",
+    items: [{ to: "/workshops", label: "Workshops", ico: "🎓" }],
+  },
+  {
     group: "Website Content",
     items: [
       { to: "/sections", label: "Homepage Sections", ico: "▤" },
@@ -50,9 +54,9 @@ export default function Layout({ title, children }) {
           </div>
         ))}
         <div className="nav-group">Coming next</div>
-        <div className="nav-item" style={{ opacity: .5, cursor: "default" }}><span className="ico">◷</span> Workshops</div>
         <div className="nav-item" style={{ opacity: .5, cursor: "default" }}><span className="ico">◷</span> Registrations</div>
         <div className="nav-item" style={{ opacity: .5, cursor: "default" }}><span className="ico">◷</span> Payments</div>
+        <div className="nav-item" style={{ opacity: .5, cursor: "default" }}><span className="ico">◷</span> Settings</div>
 
         <div className="sidebar-foot">
           <div className="hstack" style={{ padding: "6px 10px" }}>

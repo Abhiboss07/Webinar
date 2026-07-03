@@ -15,25 +15,55 @@
  * `sections` manifest (order + enabled) — see config/sections.js.
  */
 const SiteConfig = require("../models/SiteConfig");
+const Workshop = require("../models/Workshop");
 const { normalizeManifest } = require("../config/sections");
 
 function isPlainObject(v) {
   return v && typeof v === "object" && !Array.isArray(v);
 }
 
-/** Public: published content (or draft when ?preview=1). Always manifest-normalized. */
+/**
+ * Resolve the workshop to overlay:
+ *  - ?workshop=<slug> (preview any specific workshop, even draft)
+ *  - else the active + effectively-live published workshop
+ *  - else null (→ site serves the SiteConfig base unchanged; nothing breaks)
+ */
+async function resolveWorkshop(slug) {
+  if (slug) return Workshop.findOne({ slug });
+  const now = new Date();
+  return Workshop.findOne({
+    isActive: true,
+    status: "published",
+    $or: [{ scheduledFor: null }, { scheduledFor: { $lte: now } }],
+  });
+}
+
+/** Overlay a workshop's content on the base (per top-level key), preserving
+ *  the site-wide section manifest. Only keys the workshop defines are overridden. */
+function compose(base, workshop) {
+  if (!workshop || !isPlainObject(workshop.content)) return base;
+  return { ...base, ...workshop.content, sections: base.sections };
+}
+
+/** Public: published content (or draft when ?preview=1), with the active/previewed
+ *  workshop overlaid. Always manifest-normalized. */
 async function getPublic(req, res) {
   try {
     const doc = await SiteConfig.getSingleton();
     const preview = String(req.query.preview || "") === "1";
-    const raw = preview ? (doc.draft || doc.data || {}) : (doc.data || {});
-    const data = normalizeManifest(raw);
-    if (preview) {
-      res.set("Cache-Control", "no-store");
-    } else {
-      res.set("Cache-Control", "public, max-age=30, stale-while-revalidate=120");
-    }
-    return res.json({ status: "success", data, preview, updatedAt: doc.publishedAt || doc.updatedAt });
+    const base = normalizeManifest(preview ? (doc.draft || doc.data || {}) : (doc.data || {}));
+
+    const workshop = await resolveWorkshop(String(req.query.workshop || "").trim());
+    const data = compose(base, workshop);
+
+    res.set("Cache-Control", preview ? "no-store" : "public, max-age=30, stale-while-revalidate=120");
+    return res.json({
+      status: "success",
+      data,
+      preview,
+      activeWorkshop: workshop ? { slug: workshop.slug, title: workshop.title, status: workshop.status } : null,
+      updatedAt: doc.publishedAt || doc.updatedAt,
+    });
   } catch (err) {
     console.error("[site-config/get] error:", err.message);
     return res.status(500).json({ status: "error", message: "Could not load site content" });

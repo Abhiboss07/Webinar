@@ -57,9 +57,13 @@ export const $ = (id) => document.getElementById(id);
 export async function loadConfig() {
   try {
     const base = resolveApiBase(FALLBACK_CONFIG);
-    // ?preview=1 on the page → fetch the unpublished DRAFT (admin "Preview").
-    const preview = (typeof location !== "undefined" && new URLSearchParams(location.search).get("preview") === "1");
-    const url = base + "/api/site-config" + (preview ? "?preview=1" : "");
+    // ?preview=1 → unpublished DRAFT; ?workshop=<slug> → preview a specific
+    // workshop overlay (admin "Preview"). Both are forwarded to the API.
+    const params = (typeof location !== "undefined") ? new URLSearchParams(location.search) : new URLSearchParams();
+    const qs = new URLSearchParams();
+    if (params.get("preview") === "1") qs.set("preview", "1");
+    if (params.get("workshop")) qs.set("workshop", params.get("workshop"));
+    const url = base + "/api/site-config" + (qs.toString() ? "?" + qs.toString() : "");
     const res = await fetch(url, { headers: { Accept: "application/json" } });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const json = await res.json();

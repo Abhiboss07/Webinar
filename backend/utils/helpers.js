@@ -16,4 +16,14 @@ function receiptFor(regId) {
   return ("rcpt_" + clean(regId)).slice(0, 40) || `rcpt_${Date.now()}`;
 }
 
-module.exports = { clean, isEmail, receiptFor };
+/** URL-safe slug from arbitrary text. */
+function slugify(v) {
+  return clean(v)
+    .toLowerCase()
+    .replace(/&[a-z]+;/g, " ")     // strip HTML entities like &amp;
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60) || "workshop";
+}
+
+module.exports = { clean, isEmail, receiptFor, slugify };

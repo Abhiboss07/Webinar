@@ -15,6 +15,7 @@ const authRoutes = require("./routes/authRoutes");
 const contentRoutes = require("./routes/contentRoutes");
 const statsRoutes = require("./routes/statsRoutes");
 const mediaRoutes = require("./routes/mediaRoutes");
+const workshopRoutes = require("./routes/workshopRoutes");
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use("/uploads", express.static(path.resolve(process.cwd(), config.storage.up
 app.use("/api/auth", authRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/media", mediaRoutes);
+app.use("/api/workshops", workshopRoutes);
 app.use("/api", contentRoutes);
 
 // ---- Payment / registration routes (unchanged public flow) ----

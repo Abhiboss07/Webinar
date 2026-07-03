@@ -7,6 +7,8 @@ import Dashboard from "./pages/Dashboard.jsx";
 import Content from "./pages/Content.jsx";
 import Sections from "./pages/Sections.jsx";
 import Media from "./pages/Media.jsx";
+import Workshops from "./pages/Workshops.jsx";
+import WorkshopEdit from "./pages/WorkshopEdit.jsx";
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -45,6 +47,8 @@ export default function App() {
               <Route path="/sections" element={<Sections />} />
             </Route>
             <Route path="/media" element={<Protected><Media /></Protected>} />
+            <Route path="/workshops" element={<Protected><Workshops /></Protected>} />
+            <Route path="/workshops/:id" element={<Protected><WorkshopEdit /></Protected>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </ToastProvider>

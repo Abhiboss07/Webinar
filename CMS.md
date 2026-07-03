@@ -134,6 +134,7 @@ cp .env.example .env         # then fill in MONGODB_URI, JWT_SECRET, ADMIN_EMAIL
 npm install
 npm run seed:admin           # creates the first admin from ADMIN_EMAIL / ADMIN_PASSWORD
 npm run migrate:config       # imports config/workshop-config.js → DB (prints the report)
+npm run seed:workshop        # creates the first active Workshop from that content (Module 2.4)
 npm start                    # or: npm run dev
 ```
 
@@ -158,7 +159,7 @@ npm run dev                   # http://localhost:5173  → log in with the seede
 3. **Environment** (Render dashboard): `MONGODB_URI`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`,
    `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `GOOGLE_SHEET_ENDPOINT`, `SHEET_SHARED_TOKEN`,
    `FRONTEND_URL` (public site URL **and** admin URL, comma-separated), `NODE_ENV=production`.
-4. One-time via Render Shell: `npm run seed:admin && npm run migrate:config`.
+4. One-time via Render Shell: `npm run seed:admin && npm run migrate:config && npm run seed:workshop`.
 
 ### Public site → Hostinger (unchanged process)
 - `cd frontend && npm run build:css`, then upload `frontend-production/` (or `frontend/`) static files.
@@ -306,13 +307,50 @@ builds clean (49 modules).
 downsizes large images client-side); Cloudinary paths need real credentials to exercise here; browser
 eyeball of the grid/dropzone still pending (no browser in build env).
 
+## Phase 2.4 — Workshop Manager ✅
+
+Workshops become first-class, cloneable entities. A `Workshop.content` **overlays** the site-wide
+`SiteConfig` base — the public `/api/site-config` composes `{ …base, …activeWorkshop.content }` (workshop
+owns `workshop`, `hero`, `seo`, `registration`, `modules`, `faq`, `testimonials`, `trainer`, `bonus`,
+`gallery`…), while brand/footer/section-manifest stay site-wide.
+
+**Safety:** with no active workshop the endpoint returns today's output unchanged; the migration
+(`seed:workshop`) creates one active workshop that mirrors the current content **exactly**, so the
+composed output is byte-identical (verified). Overlay only replaces keys the workshop defines, so partial
+workshops fall back to the base.
+
+**Model — `workshops`:** title, subtitle, description, slug (unique), category, `status`
+(draft/published/archived), `isActive` (one live workshop), `scheduledFor` (delayed go-live), `content`
+(overlay), timestamps.
+
+**APIs added:** `GET/POST /api/workshops`, `GET/PUT/DELETE /api/workshops/:id`,
+`POST /api/workshops/:id/{duplicate,activate,status}`. Public `GET /api/site-config?workshop=<slug>`
+previews any (even draft) workshop; the site forwards `?preview=1&workshop=` from the URL.
+
+**Admin:** Workshops list (status/active badges, filters, New/Edit/Duplicate/Publish/Unpublish/Activate/
+Archive/Restore/Delete/Preview) and a tabbed editor (General · Schedule · Registration · Media · SEO ·
+Advanced JSON) with autosave, Media picker for banner/trainer/gallery.
+
+**Database changes:** new `workshops` collection (indexes: slug, status, isActive). No changes to existing
+collections; registration/payment/Sheets untouched.
+
+**Verified (22/22 e2e):** auth guard; seeded active/published/live workshop; **composed == base
+(byte-identical)**; draft preview via `?workshop=`; create/slug/validation; publish→activate switches the
+live workshop and deactivates the old; duplicate; delete-active guard (409); archive → safe fallback;
+reactivate; future-`scheduledFor` not served until its time; migration idempotent; admin builds (52 mod).
+
+**Known limitations:** arrays (agenda/modules, faq, testimonials, certificates, sponsors) are edited via
+the Advanced JSON tab for now — dedicated per-item editors come later; per-workshop draft-vs-published
+dual copies aren't implemented (status + `?workshop=` preview cover the workflow); no cron for scheduled
+publish (go-live is computed at read time, which is sufficient).
+
 ## Roadmap — remaining modules (revised order)
 
-**2.4 Workshop Builder** (multiple workshops, active-workshop selection — client's daily tool) ·
 **2.5 Registration Manager** (search/filter/sort/CSV+Excel/status/bulk on the `Registration` model) ·
-**2.6 Payment Manager** · **2.7 Analytics** · **2.8 Users & Roles** · **2.9 Settings** ·
-**2.10 Backup / Restore / Audit Logs**. Later: a **Form Builder** so the client can add registration
-fields (e.g. Hospital Name, License Number) without code, rendered on the form and stored per-registration.
+**2.6 Payment Manager** · **2.7 Analytics** · **2.8 User Management** · **2.9 Settings** (incl. a
+**Theme & Branding** section: logo, favicon, colours, fonts, contact, social, footer) · **2.10 Form
+Builder** (client adds registration fields — Hospital Name, License Number… — without code, rendered on
+the form and stored per-registration) · **2.11 Email & WhatsApp Templates** · **2.12 Backup / Audit Logs**.
 
 Homepage CMS with per-section enable/disable + drag-reorder + preview; **Media Manager** on Cloudinary;
 **Registration Manager** (search/filter/sort/CSV+Excel/status/bulk — built on the `Registration` model
