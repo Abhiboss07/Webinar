@@ -41,6 +41,10 @@ const CFG = {
   branding: { label: "Branding", fields: [
     ["branding.loaderLogo", "Loader logo", "media"], ["branding.emailLogo", "Email logo", "media"], ["branding.invoiceLogo", "Invoice logo", "media"],
     ["branding.certificateLogo", "Certificate logo", "media"], ["branding.adminLogo", "Admin logo", "media"] ] },
+  communication: { label: "Communication", fields: [
+    ["communication.emailProvider", "Email provider", "select", ["smtp", "mock"], true], ["communication.replyTo", "Reply-to", "text", null, true],
+    ["communication.adminNotify", "Admin notify (emails)", "text"], ["communication.whatsapp.provider", "WhatsApp provider", "select", ["mock", "meta", "twilio"], true],
+    ["communication.whatsapp.from", "WhatsApp from", "text", null, true], ["communication.whatsapp.phoneNumberId", "WhatsApp phone ID", "text", null, true], ["communication.whatsapp.accessToken", "WhatsApp access token", "secret"] ] },
 };
 const SOCIAL = ["facebook", "instagram", "linkedin", "youtube", "twitter"];
 

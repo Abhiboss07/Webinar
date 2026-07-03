@@ -14,6 +14,16 @@ const DEFAULTS = {
   seo: { defaultTitle: "", metaDescription: "", keywords: "", ogImage: "", robots: "index, follow", canonicalUrl: "", googleVerification: "", schema: "" },
   security: { sessionTimeout: "12h", passwordMinLength: 8, maxLoginAttempts: 5, lockMinutes: 15, twoFactor: false, maintenance: { enabled: false, message: "We'll be back shortly." } },
   branding: { loaderLogo: "", emailLogo: "", invoiceLogo: "", certificateLogo: "", adminLogo: "" },
+  communication: {
+    emailProvider: "smtp",            // smtp | mock (mock = simulate, for testing/dev)
+    replyTo: "", adminNotify: "",     // comma-separated admin notification recipients
+    whatsapp: { provider: "mock", phoneNumberId: "", accessToken: "", from: "" }, // mock | meta | twilio
+    triggers: {
+      "registration.success": true, "payment.success": true, "payment.failed": false,
+      "refund.processed": true, "workshop.reminder": false, "workshop.tomorrow": false,
+      "workshop.started": false, "certificate.ready": false,
+    },
+  },
 };
 
 // Dot-paths that hold secrets (encrypted at rest, never returned).
@@ -21,6 +31,7 @@ const SECRET_PATHS = [
   "payment.test.keySecret", "payment.test.webhookSecret",
   "payment.live.keySecret", "payment.live.webhookSecret",
   "media.cloudinary.apiSecret", "email.smtp.password", "google.sheets.sharedToken",
+  "communication.whatsapp.accessToken",
 ];
 
 const SECTIONS = Object.keys(DEFAULTS);

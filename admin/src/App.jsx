@@ -15,6 +15,7 @@ import Users from "./pages/Users.jsx";
 import Roles from "./pages/Roles.jsx";
 import Audit from "./pages/Audit.jsx";
 import Settings from "./pages/Settings.jsx";
+import Communication from "./pages/Communication.jsx";
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -61,6 +62,7 @@ export default function App() {
             <Route path="/roles" element={<Protected><Roles /></Protected>} />
             <Route path="/audit" element={<Protected><Audit /></Protected>} />
             <Route path="/settings" element={<Protected><Settings /></Protected>} />
+            <Route path="/communication" element={<Protected><Communication /></Protected>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </ToastProvider>

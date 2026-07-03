@@ -22,12 +22,14 @@ async function verify() {
   return true;
 }
 
-async function send({ to, subject, html, text }) {
+async function send({ to, subject, html, text, attachments }) {
   const s = await provider.smtp();
+  const comm = await provider.communication().catch(() => ({}));
   const t = await getTransport();
   return t.sendMail({
     from: `"${s.fromName || "Youngness Institute"}" <${s.fromEmail || s.username}>`,
-    to, subject, html, text,
+    replyTo: comm && comm.replyTo ? comm.replyTo : undefined,
+    to, subject, html, text, attachments,
   });
 }
 

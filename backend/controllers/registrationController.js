@@ -7,6 +7,8 @@
 const config = require("../config");
 const sheetService = require("../services/sheetService");
 const registrationStore = require("../services/registrationStore");
+const triggers = require("../services/triggers");
+const Registration = require("../models/Registration");
 const { clean } = require("../utils/helpers");
 
 async function register(req, res) {
@@ -22,6 +24,10 @@ async function register(req, res) {
       city: b.city, experience: b.experience, mode: b.mode,
       workshop: clean(b.workshop) || config.workshopName, source: b.source,
     });
+
+    // Fire the registration-success comms off the Mongo capture (best-effort),
+    // independent of the Sheets write below so a Sheets hiccup can't skip it.
+    try { const doc = await Registration.findOne({ regId }).lean(); if (doc) await triggers.fire("registration.success", { registration: doc }); } catch (_) { /* ignore */ }
 
     const reg = {
       "Reg ID": regId,                              // upsert key column

@@ -7,7 +7,7 @@
  */
 const RESOURCES = [
   "dashboard", "homepage_cms", "media", "workshops", "registrations",
-  "payments", "analytics", "users", "roles", "settings", "api_keys", "backups",
+  "payments", "analytics", "communication", "users", "roles", "settings", "api_keys", "backups",
 ];
 
 const ACTIONS = ["view", "create", "edit", "delete", "publish", "export", "refund", "approve", "manage_users"];
@@ -30,6 +30,7 @@ const DEFAULT_ROLES = [
       media: ["view", "create", "edit", "delete"], workshops: ["view", "create", "edit", "delete", "publish"],
       registrations: ["view", "create", "edit", "delete", "export", "approve"],
       payments: ["view", "edit", "refund", "export"], analytics: ["view", "export"],
+      communication: ["view", "create", "edit", "delete", "export"],
       users: ["view", "create", "edit", "delete", "manage_users"], settings: ["view", "edit"],
       api_keys: ["view", "edit"], backups: ["view", "create"],
     }),
@@ -39,7 +40,7 @@ const DEFAULT_ROLES = [
     permissions: perms({
       dashboard: ["view"], homepage_cms: ["view", "edit", "publish"], media: ["view", "create", "edit"],
       workshops: ["view", "create", "edit", "publish"], registrations: ["view", "edit", "export", "approve"],
-      payments: ["view", "export"], analytics: ["view", "export"],
+      payments: ["view", "export"], analytics: ["view", "export"], communication: ["view", "create", "edit"],
     }),
   },
   {
@@ -68,7 +69,7 @@ const DEFAULT_ROLES = [
     key: "viewer", name: "Viewer", description: "Read-only across the panel.", system: true,
     permissions: perms({
       dashboard: ["view"], homepage_cms: ["view"], media: ["view"], workshops: ["view"],
-      registrations: ["view"], payments: ["view"], analytics: ["view"],
+      registrations: ["view"], payments: ["view"], analytics: ["view"], communication: ["view"],
     }),
   },
 ];

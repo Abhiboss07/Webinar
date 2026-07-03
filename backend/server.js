@@ -18,6 +18,10 @@ async function start() {
     console.error("⚠  MongoDB connection failed at boot:", err.message);
   }
 
+  // Background worker: drain the communication queue on an interval.
+  try { require("./services/commQueue").startWorker(parseInt(process.env.COMM_WORKER_MS || "15000", 10)); }
+  catch (e) { console.error("⚠  comm worker not started:", e.message); }
+
   app.listen(config.port, () => {
     console.log(`Youngness backend listening on :${config.port} (${config.env})`);
     if (!config.isConfigured()) {

@@ -75,5 +75,6 @@ async function sheets() {
 }
 async function smtp() { return (await effective()).email.smtp; }
 async function security() { return (await effective()).security; }
+async function communication() { return (await effective()).communication; }
 
-module.exports = { effective, invalidate, maskedView, publicView, razorpay, cloudinary, sheets, smtp, security };
+module.exports = { effective, invalidate, maskedView, publicView, razorpay, cloudinary, sheets, smtp, security, communication };

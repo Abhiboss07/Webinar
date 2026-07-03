@@ -10,6 +10,7 @@ const NAV = [
       { to: "/workshops", label: "Workshops", ico: "🎓", res: "workshops" },
       { to: "/registrations", label: "Registrations", ico: "🧾", res: "registrations" },
       { to: "/payments", label: "Payments", ico: "💳", res: "payments" },
+      { to: "/communication", label: "Communication", ico: "✉", res: "communication" },
     ],
   },
   {

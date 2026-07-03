@@ -204,6 +204,7 @@ async function refund(req, res) {
     reg.activity.push({ type: "refund", detail: `Refunded ${amount} ${reg.currency}${useGateway ? "" : " (manual)"}`, by });
     await reg.save();
     await audit.record(req, "payment.refund", { resource: "payments", targetId: reg._id, newValue: { amount, gateway: useGateway, refundId: reg.refundId } });
+    try { await require("../services/triggers").fire("refund.processed", { registration: reg.toObject() }); } catch (_) { /* ignore */ }
     return res.json({ status: "success", payment: { ...reg.toObject(), gateway: "Razorpay" } });
   } catch (err) {
     console.error("[payments/refund]", err.message);

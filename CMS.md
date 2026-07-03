@@ -135,6 +135,7 @@ npm install
 npm run seed:admin           # creates the first admin from ADMIN_EMAIL / ADMIN_PASSWORD
 npm run migrate:config       # imports config/workshop-config.js → DB (prints the report)
 npm run seed:workshop        # creates the first active Workshop from that content (Module 2.4)
+npm run seed:templates       # seeds default email/WhatsApp templates (Module 2.9)
 npm start                    # or: npm run dev
 ```
 
@@ -494,13 +495,54 @@ credentials to exercise here (error paths + wiring tested); disk metric best-eff
 public branding/maintenance is exposed via API but the public site's consumption of it (theme colours,
 maintenance screen) is a small follow-up wiring; 2FA remains schema-ready.
 
+## Phase 2.9 — Communication Center (Email + WhatsApp) ✅
+
+A production communication system with templates, triggers, a queue, retries, scheduling, bulk sends and
+history. **Comms never block the core flows** (best-effort fire) and all comm config lives in **Settings →
+Communication** (per the brief) — including a **`mock` provider mode** so the whole pipeline runs without
+real SMTP/WhatsApp credentials.
+
+**Providers (pluggable):** email `smtp` (nodemailer) | `mock`; WhatsApp `mock` | `meta` (Cloud API) |
+`twilio` (stub). `mock` simulates delivery for dev/testing; real providers drop in via Settings.
+
+**Models:** `MessageTemplate` (channel, key, trigger, subject/body with `{{variables}}`, version history),
+`Message` (the queue **and** history: status queued→sending→sent/failed/cancelled, retries, scheduledFor,
+attachments, engagement), `CommState` (pause flag).
+
+**Pipeline:** `templateEngine` (render + context), `dispatcher` (per-provider send + attachment build:
+receipt/invoice PDF, **.ics** calendar), `commQueue` (enqueue, process-due with retry+backoff,
+retry/cancel/pause, background worker), `triggers.fire(event)` wired into `/register`
+(registration.success), `/verify-payment` (payment.success) and refund (refund.processed) — best-effort.
+
+**APIs added:** `GET /api/comm/dashboard`; templates CRUD + `/preview` + `/duplicate`; `GET /history`;
+queue `/queue/{process,retry,cancel,pause}`; `/triggers` (get/set); `/send-test`; `/send-bulk` (by
+audience/status/workshop/date/ids). RBAC resource `communication` (admin/manager get it); every action
+audited. Background worker drains the queue every `COMM_WORKER_MS` (default 15s).
+
+**Admin:** Communication Center — dashboard (sent/queued/failed/opened + queue controls + automation
+triggers), Templates (list/editor with live **Preview**/duplicate/delete), History (filter/paginate),
+Send (bulk by audience + schedule; send-test). Settings gains a **Communication** tab (providers, secrets,
+reply-to, admin-notify).
+
+**Database changes:** new `messagetemplates`, `messages`, `commstates` collections. No existing collection
+changed; registration/payment flows re-verified (2.5 green).
+
+**Verified (22/22 e2e + regression):** template CRUD/version/duplicate/preview; **trigger fires on
+registration** with an **ICS attachment**; queue processes via mock → sent; **failure → retry → success**;
+**scheduled (future) stays queued**; bulk enqueues == audience count; **pause/resume**; triggers get/set;
+dashboard; RBAC (viewer view-only, create → 403); audit. Admin builds. Added deps: nodemailer.
+
+**Known limitations:** live SMTP/WhatsApp-provider delivery + `meta`/`twilio` paths need real credentials
+(mock path + provider selection tested); email open/click tracking fields exist but the pixel/redirect
+endpoints aren't wired yet; automated reminder scheduling (workshop.tomorrow/reminder) is trigger-ready
+but needs a scheduled job/cron to enqueue (manual + scheduled bulk sends cover it now).
+
 ## Roadmap — remaining modules (revised order)
 
-**2.9 Email + WhatsApp Automation** (wire the SMTP now configurable in Settings into invites/receipts +
-WhatsApp templates) · **2.10 Certificate & Attendance (QR)** · **2.11 Analytics & Reports** ·
-**2.12 Backup, Restore & System Health** · **3.0 AI Assistant**. Cross-cutting: a **Form Builder** (client
-adds registration fields — Hospital Name, License Number… — without code) and wiring the public site to
-the new public-settings (theme colours, maintenance screen).
+**2.10 Certificate & Attendance (QR)** · **2.11 Analytics & Reports** · **2.12 Backup, Restore & System
+Health** · **3.0 AI Assistant**. Cross-cutting: a **Form Builder** (client adds registration fields —
+Hospital Name, License Number… — without code); wiring the public site to `/api/settings/public` (theme
+colours, maintenance screen); email open/click tracking; and a cron to auto-enqueue workshop reminders.
 
 Homepage CMS with per-section enable/disable + drag-reorder + preview; **Media Manager** on Cloudinary;
 **Registration Manager** (search/filter/sort/CSV+Excel/status/bulk — built on the `Registration` model

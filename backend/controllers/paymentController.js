@@ -6,6 +6,8 @@
 const razorpayService = require("../services/razorpayService");
 const sheetService = require("../services/sheetService");
 const registrationStore = require("../services/registrationStore");
+const triggers = require("../services/triggers");
+const Registration = require("../models/Registration");
 const { clean } = require("../utils/helpers");
 
 async function verifyPayment(req, res) {
@@ -53,6 +55,9 @@ async function verifyPayment(req, res) {
     orderId, paymentId, method, amount: amountRupees, currency: "INR",
     transactionTime: new Date().toISOString(),
   });
+
+  // Fire payment-success comms (best-effort).
+  try { const doc = await Registration.findOne({ regId }).lean(); if (doc) await triggers.fire("payment.success", { registration: doc }); } catch (_) { /* ignore */ }
 
   return res.json({ status: "success", paymentId: paymentId, orderId: orderId, method: method, amount: amountRupees });
 }
