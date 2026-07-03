@@ -59,8 +59,6 @@ youngness-workshop/
 │   ├── config/workshop-config.js# kept as OFFLINE FALLBACK only
 │   └── … (sections, css, assets — unchanged)
 │
-├── frontend-production/         # Deploy copy of the public site (synced)
-│
 └── admin/                       # ★ Admin panel (React + Vite) — new app
     ├── index.html · vite.config.js · package.json · .env.example
     └── src/
@@ -164,7 +162,7 @@ npm run dev                   # http://localhost:5173  → log in with the seede
 4. One-time via Render Shell: `npm run seed:admin && npm run migrate:config && npm run seed:workshop`.
 
 ### Public site → Hostinger (unchanged process)
-- `cd frontend && npm run build:css`, then upload `frontend-production/` (or `frontend/`) static files.
+- `cd frontend && npm run build:css`, then upload the `frontend/` static files (excluding src/, node_modules).
 - Set `api.prod` (in `config/workshop-config.js`) to the Render URL — this is still used to resolve
   the API base **and** as the offline fallback content.
 
@@ -254,7 +252,7 @@ guarantee, faq, finalCta) with friendly labels; `normalizeManifest()` seeds/repa
 
 **Public site:** `frontend/js/app.js` renders body sections in manifest order, honouring `enabled` and
 the footer toggle, skipping any section with no renderer/content; `?preview=1` loads the draft. Missing
-manifest → historical default order (fully backward compatible). Synced to `frontend-production`.
+manifest → historical default order (fully backward compatible).
 
 **Admin:** new **Homepage Sections** page (drag-and-drop reorder, enable/disable switches, footer toggle,
 live "N of 12 enabled" validation); a shared **PublishBar** (autosave status, Preview, Discard, Publish,
