@@ -47,6 +47,13 @@ const registrationSchema = new mongoose.Schema(
     certificateIssued: { type: Boolean, default: false },
     waitlisted: { type: Boolean, default: false },
 
+    // Attendance (Event Operations, Module 2.10).
+    checkedInAt: { type: Date, default: null },
+    checkedOutAt: { type: Date, default: null },
+    checkinBy: { type: String, default: "" },
+    checkinDevice: { type: String, default: "" },
+    checkinLocation: { type: String, default: "" },
+
     // Internal admin notes + activity timeline.
     notes: { type: [{ text: String, by: String, at: { type: Date, default: Date.now } }], default: [] },
     activity: { type: [{ type: { type: String }, detail: String, by: String, at: { type: Date, default: Date.now } }], default: [] },

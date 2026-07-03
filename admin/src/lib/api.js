@@ -96,6 +96,24 @@ export const api = {
   commSendBulk: (body) => request("/api/comm/send-bulk", { method: "POST", body }),
   commTriggers: () => request("/api/comm/triggers"),
   commSetTriggers: (triggers) => request("/api/comm/triggers", { method: "POST", body: { triggers } }),
+
+  // ---- Event Operations (attendance + certificates) ----
+  attDashboard: () => request("/api/attendance/dashboard"),
+  attAnalytics: () => request("/api/attendance/analytics"),
+  attList: (params = {}) => { const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== "" && v != null)).toString(); return request(`/api/attendance${qs ? "?" + qs : ""}`); },
+  attQr: (id) => request(`/api/attendance/${id}/qr`),
+  attCheckin: (body) => request("/api/attendance/checkin", { method: "POST", body }),
+  attCheckout: (id) => request(`/api/attendance/${id}/checkout`, { method: "POST" }),
+  certList: (params = {}) => { const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== "" && v != null)).toString(); return request(`/api/certificates${qs ? "?" + qs : ""}`); },
+  certTemplate: () => request("/api/certificates/template"),
+  certTemplateSave: (body) => request("/api/certificates/template", { method: "PATCH", body }),
+  certGenerate: (registrationId, force) => request("/api/certificates/generate", { method: "POST", body: { registrationId, force } }),
+  certBulk: (body) => request("/api/certificates/bulk-generate", { method: "POST", body }),
+  certRevoke: (id, reason) => request(`/api/certificates/${id}/revoke`, { method: "POST", body: { reason } }),
+  certReissue: (id) => request(`/api/certificates/${id}/reissue`, { method: "POST" }),
+  certEmail: (id) => request(`/api/certificates/${id}/email`, { method: "POST" }),
+  certVerify: (n, t) => request(`/api/certificates/verify?n=${encodeURIComponent(n)}&t=${encodeURIComponent(t || "")}`, { auth: false }),
+
   getConfig: () => request("/api/site-config", { auth: false }),
   // Draft workflow.
   getDraft: () => request("/api/site-config/draft"),
@@ -151,16 +169,26 @@ export const api = {
   payRefund: (id, body) => request(`/api/payments/${id}/refund`, { method: "POST", body }),
 };
 
-/* Authenticated file download (exports are behind auth → fetch a blob, then save). */
-export async function download(path, filename) {
-  const res = await fetch(BASE + path, { headers: getToken() ? { Authorization: `Bearer ${getToken()}` } : {} });
-  if (!res.ok) throw new Error(`Download failed (${res.status})`);
-  const blob = await res.blob();
+function saveBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url; a.download = filename || "download";
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
+}
+
+/* Authenticated file download (exports are behind auth → fetch a blob, then save). */
+export async function download(path, filename) {
+  const res = await fetch(BASE + path, { headers: getToken() ? { Authorization: `Bearer ${getToken()}` } : {} });
+  if (!res.ok) throw new Error(`Download failed (${res.status})`);
+  saveBlob(await res.blob(), filename);
+}
+
+/* Authenticated POST download (e.g. a ZIP built from a body). */
+export async function downloadPost(path, body, filename) {
+  const res = await fetch(BASE + path, { method: "POST", headers: { "Content-Type": "application/json", ...(getToken() ? { Authorization: `Bearer ${getToken()}` } : {}) }, body: JSON.stringify(body || {}) });
+  if (!res.ok) throw new Error(`Download failed (${res.status})`);
+  saveBlob(await res.blob(), filename);
 }
 
 /* Multipart upload with progress (fetch can't report upload progress → XHR). */

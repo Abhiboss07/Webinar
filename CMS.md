@@ -537,12 +537,51 @@ dashboard; RBAC (viewer view-only, create → 403); audit. Admin builds. Added d
 endpoints aren't wired yet; automated reminder scheduling (workshop.tomorrow/reminder) is trigger-ready
 but needs a scheduled job/cron to enqueue (manual + scheduled bulk sends cover it now).
 
+## Phase 2.10 — Event Operations (QR Check-in + Certificates) ✅
+
+Runs the day-of event: QR check-in with duplicate protection, certificate generation, and **public
+verification**. Reuses `cryptoBox` (encrypted QR), `pdfkit` (certificates), `commQueue` (emailing).
+
+**Attendance:** `Registration` gains `checkedInAt/checkedOutAt/checkinBy/device/location`. Encrypted QR
+token (`qrToken` = AES-GCM of `{regId,wid}`) per registration; check-in by **QR token / id / regId**;
+**second scan is blocked** (duplicate protection). Dashboard (checked-in / absent / completion) + analytics
+(attendance %, no-show %, avg arrival hour, by-workshop).
+
+**Certificates:** `Certificate` (serial `YW-YYYY-NNNNNN`, verify token, status valid/revoked) + singleton
+`CertificateTemplate`. Generate (eligibility: attended or paid, or `force`), **bulk generate**, PDF render
+with an embedded verification QR, **ZIP** download (archiver), **email** (queued with cert PDF attachment),
+**revoke**, **reissue** (links to the old number).
+
+**Public verification:** `GET /api/certificates/verify?n=&t=` (no auth) → valid / revoked / not_found,
+returning only non-sensitive fields; a wrong token yields not_found (no enumeration). Admin `/verify` page.
+
+**APIs added:** `/api/attendance/{dashboard,analytics,'',:id/qr,checkin,:id/checkout}`;
+`/api/certificates/{'',template,generate,bulk-generate,zip,:id/download,:id/email,:id/revoke,:id/reissue,
+verify(public)}`. RBAC resource `events`; every action audited. Dispatcher gained a `certificate`
+attachment kind.
+
+**Admin:** Attendance page (dashboard + scan/manual/search check-in + QR badges), Certificates page (list
+with generate/bulk/download/ZIP/email/revoke/reissue + **template designer**), public Verify page.
+
+**Database changes:** attendance fields on `registrations`; new `certificates`, `certificatetemplates`.
+No other collection changed; registration/payment/comms re-verified (2.5 green).
+
+**Verified (26/26 e2e + regression):** encrypted QR + PNG; check-in via token/id/regId; **duplicate
+protection**; invalid token/unknown reg → 404; dashboard/analytics; issue + eligibility (ineligible → 400,
+force works) + no-duplicate; bulk; PDF (%PDF) + ZIP (PK); **public verify** valid/wrong-token/regId;
+revoke → verify revoked; reissue; **email cert with attachment → mock sent**; RBAC (viewer view-only,
+checkin/generate → 403); audit. Admin builds.
+
+**Known limitations:** camera QR scanning uses keyboard-wedge/hardware scanners + manual entry (a
+`BarcodeDetector`/webcam scanner is a UI add-on); certificate PDF renders text + verify-QR (embedding
+remote logo/background images is a later enhancement); offline check-in queue (client-side) not yet built.
+
 ## Roadmap — remaining modules (revised order)
 
-**2.10 Certificate & Attendance (QR)** · **2.11 Analytics & Reports** · **2.12 Backup, Restore & System
-Health** · **3.0 AI Assistant**. Cross-cutting: a **Form Builder** (client adds registration fields —
-Hospital Name, License Number… — without code); wiring the public site to `/api/settings/public` (theme
-colours, maintenance screen); email open/click tracking; and a cron to auto-enqueue workshop reminders.
+**2.11 Analytics & Reports** · **2.12 Backup, Restore & System Health** · **3.0 AI Assistant**.
+Cross-cutting: a **Form Builder** (client adds registration fields — Hospital Name, License Number… —
+without code); wiring the public site to `/api/settings/public` (theme colours, maintenance screen); email
+open/click tracking; a cron to auto-enqueue workshop reminders; and a webcam QR scanner + offline check-in.
 
 Homepage CMS with per-section enable/disable + drag-reorder + preview; **Media Manager** on Cloudinary;
 **Registration Manager** (search/filter/sort/CSV+Excel/status/bulk — built on the `Registration` model

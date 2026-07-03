@@ -11,6 +11,8 @@ const NAV = [
       { to: "/registrations", label: "Registrations", ico: "🧾", res: "registrations" },
       { to: "/payments", label: "Payments", ico: "💳", res: "payments" },
       { to: "/communication", label: "Communication", ico: "✉", res: "communication" },
+      { to: "/attendance", label: "Attendance", ico: "✅", res: "events" },
+      { to: "/certificates", label: "Certificates", ico: "🎓", res: "events" },
     ],
   },
   {

@@ -7,7 +7,7 @@
  */
 const RESOURCES = [
   "dashboard", "homepage_cms", "media", "workshops", "registrations",
-  "payments", "analytics", "communication", "users", "roles", "settings", "api_keys", "backups",
+  "payments", "analytics", "communication", "events", "users", "roles", "settings", "api_keys", "backups",
 ];
 
 const ACTIONS = ["view", "create", "edit", "delete", "publish", "export", "refund", "approve", "manage_users"];
@@ -31,6 +31,7 @@ const DEFAULT_ROLES = [
       registrations: ["view", "create", "edit", "delete", "export", "approve"],
       payments: ["view", "edit", "refund", "export"], analytics: ["view", "export"],
       communication: ["view", "create", "edit", "delete", "export"],
+      events: ["view", "create", "edit", "delete", "export"],
       users: ["view", "create", "edit", "delete", "manage_users"], settings: ["view", "edit"],
       api_keys: ["view", "edit"], backups: ["view", "create"],
     }),
@@ -41,6 +42,7 @@ const DEFAULT_ROLES = [
       dashboard: ["view"], homepage_cms: ["view", "edit", "publish"], media: ["view", "create", "edit"],
       workshops: ["view", "create", "edit", "publish"], registrations: ["view", "edit", "export", "approve"],
       payments: ["view", "export"], analytics: ["view", "export"], communication: ["view", "create", "edit"],
+      events: ["view", "create", "edit", "export"],
     }),
   },
   {
@@ -62,14 +64,14 @@ const DEFAULT_ROLES = [
     key: "support", name: "Support", description: "Assists participants; read-mostly.", system: true,
     permissions: perms({
       dashboard: ["view"], registrations: ["view", "edit", "export"],
-      payments: ["view"], workshops: ["view"], media: ["view"],
+      payments: ["view"], workshops: ["view"], media: ["view"], events: ["view", "edit"],
     }),
   },
   {
     key: "viewer", name: "Viewer", description: "Read-only across the panel.", system: true,
     permissions: perms({
       dashboard: ["view"], homepage_cms: ["view"], media: ["view"], workshops: ["view"],
-      registrations: ["view"], payments: ["view"], analytics: ["view"], communication: ["view"],
+      registrations: ["view"], payments: ["view"], analytics: ["view"], communication: ["view"], events: ["view"],
     }),
   },
 ];

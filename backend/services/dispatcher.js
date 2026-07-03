@@ -22,6 +22,17 @@ async function buildAttachments(msg) {
       } else if (a.kind === "ics") {
         const facts = (() => { try { return JSON.parse(a.ref); } catch { return {}; } })();
         out.push({ filename: a.filename || "invite.ics", content: buildIcs(facts) });
+      } else if (a.kind === "certificate") {
+        const Certificate = require("../models/Certificate");
+        const CertificateTemplate = require("../models/CertificateTemplate");
+        const { buildCertificatePdf } = require("./certificate");
+        const config = require("../config");
+        const cert = await Certificate.findById(a.ref).lean();
+        if (cert) {
+          const tpl = await CertificateTemplate.getSingleton();
+          const verifyUrl = `${process.env.CERT_VERIFY_URL || config.storage.publicBaseUrl + "/verify"}?n=${encodeURIComponent(cert.certificateNumber)}&t=${encodeURIComponent(cert.verifyToken)}`;
+          out.push({ filename: a.filename || `${cert.certificateNumber}.pdf`, content: await buildCertificatePdf(cert, tpl, verifyUrl) });
+        }
       }
     } catch (_) { /* skip a broken attachment rather than fail the send */ }
   }
