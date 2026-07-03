@@ -683,13 +683,51 @@ content/theme-colour meta; deep public re-theming would require rebuilding its C
 robots.txt/sitemap.xml are served by the API origin (point the domain/CDN at them, or copy to the static
 host).
 
-## Roadmap — remaining modules (revised order)
+## Phase 3.0 — Production Release ✅
 
-**3.0 Production Release** (performance, code-splitting, caching, compression, security hardening,
-centralised logging/monitoring, Docker + Compose, CI/CD, env validation, health checks, backup automation,
-docs, final E2E). _(Module 2.14 AI Assistant is intentionally skipped — not wanted.)_ Cross-cutting:
-**Form Builder** (dynamic registration fields); email open/click tracking; cron auto-reminders + scheduled
-backups; webcam QR scanner + offline check-in; PDF/scheduled reports.
+Hardening + DevOps to make the platform deployable and handoff-ready.
+
+**Performance:** response **compression** (gzip/brotli); admin **route-level code-splitting** via
+`React.lazy` (main bundle **330kB → 190kB**, each page its own on-demand chunk); nginx long-cache for
+hashed assets + no-cache for the entry HTML.
+
+**Security hardening:** Helmet (HSTS in prod), a **global API rate limiter** (`API_RATE_MAX`) layered under
+the stricter per-route limiters, **query/param sanitization** (strips `$`-keys → NoSQL-injection guard,
+without touching request bodies), `trust proxy` for correct client IPs behind Render/Cloudflare — on top of
+the existing bcrypt/JWT+refresh/RBAC/lockout/encrypted-secrets/audit.
+
+**Ops:** `/health` (liveness) + `/health/ready` (DB readiness); **automatic config backups**
+(`BACKUP_INTERVAL_HOURS`, keeps last 10); **env validation** (`npm run validate:env`, runs pre-start and in
+CI); centralized error logging already persists 500s to SystemLog.
+
+**DevOps artifacts:** `backend/Dockerfile` (+ healthcheck), `admin/Dockerfile` (multi-stage → nginx) +
+`nginx.conf` (SPA + caching), root **`docker-compose.yml`** (mongo + backend + admin), `.dockerignore`s,
+**GitHub Actions CI** (`.github/workflows/ci.yml`: env-validate + app smoke-require + admin build), and
+**`DEPLOYMENT.md`** (Render + Hostinger + Docker, env matrix, seed order, ops runbook).
+
+**Verified:** `/health/ready` 200; **gzip** on responses; **sanitized `$`-key query** doesn't break (200);
+rate-limit headers active; env validator exits non-zero on missing; admin builds into split chunks; backend
+boots clean with the full middleware stack; **regressions 2.2 (18/18) + 2.5 (21/21) green**.
+
+**Known limitations:** CI runs build + smoke (not the Docker-Mongo e2e suites — those need a service
+container, a quick add); Brotli depends on the proxy/CDN (Render/Cloudflare) — the app negotiates gzip;
+horizontal scaling would want the comm-queue worker as a separate process (currently in-process, safe for a
+single instance).
+
+---
+
+## Status: Phases 1 → 3.0 complete
+
+Website CMS · Media · Workshops · Registration CRM · Payments · RBAC · Settings · Communication · Attendance
+& QR · Certificates · Analytics · System Administration · White-label · Production hardening — all
+implemented, each e2e-verified and committed on branch `phase-2-cms`. (AI Assistant intentionally omitted.)
+
+## Roadmap — later (optional)
+
+Optional future work (not required for handoff): **Form Builder** (dynamic registration fields); email
+open/click tracking; per-workshop reminder cron; webcam QR scanner + offline check-in; PDF/scheduled
+reports; object-storage offload for large backups; multi-instance queue worker. _(AI Assistant intentionally
+omitted.)_
 
 Homepage CMS with per-section enable/disable + drag-reorder + preview; **Media Manager** on Cloudinary;
 **Registration Manager** (search/filter/sort/CSV+Excel/status/bulk — built on the `Registration` model

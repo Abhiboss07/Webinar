@@ -22,6 +22,10 @@ async function start() {
   try { require("./services/commQueue").startWorker(parseInt(process.env.COMM_WORKER_MS || "15000", 10)); }
   catch (e) { console.error("⚠  comm worker not started:", e.message); }
 
+  // Automatic config backups (opt-in via BACKUP_INTERVAL_HOURS).
+  try { require("./services/scheduledBackup").start(process.env.BACKUP_INTERVAL_HOURS); }
+  catch (e) { console.error("⚠  scheduled backups not started:", e.message); }
+
   app.listen(config.port, () => {
     console.log(`Youngness backend listening on :${config.port} (${config.env})`);
     if (!config.isConfigured()) {

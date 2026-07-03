@@ -1,27 +1,30 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "./lib/auth.jsx";
 import { DraftProvider } from "./lib/draft.jsx";
 import { BrandingProvider } from "./lib/branding.jsx";
 import { ToastProvider } from "./components/ui.jsx";
-import Login from "./pages/Login.jsx";
-import Dashboard from "./pages/Dashboard.jsx";
-import Content from "./pages/Content.jsx";
-import Sections from "./pages/Sections.jsx";
-import Media from "./pages/Media.jsx";
-import Workshops from "./pages/Workshops.jsx";
-import WorkshopEdit from "./pages/WorkshopEdit.jsx";
-import Registrations from "./pages/Registrations.jsx";
-import Payments from "./pages/Payments.jsx";
-import Users from "./pages/Users.jsx";
-import Roles from "./pages/Roles.jsx";
-import Audit from "./pages/Audit.jsx";
-import Settings from "./pages/Settings.jsx";
-import Communication from "./pages/Communication.jsx";
-import Attendance from "./pages/Attendance.jsx";
-import Certificates from "./pages/Certificates.jsx";
-import Verify from "./pages/Verify.jsx";
-import Analytics from "./pages/Analytics.jsx";
-import System from "./pages/System.jsx";
+import Login from "./pages/Login.jsx"; // eager: first paint
+
+// Route-level code-splitting — each page is its own lazily-loaded chunk.
+const Dashboard = lazy(() => import("./pages/Dashboard.jsx"));
+const Content = lazy(() => import("./pages/Content.jsx"));
+const Sections = lazy(() => import("./pages/Sections.jsx"));
+const Media = lazy(() => import("./pages/Media.jsx"));
+const Workshops = lazy(() => import("./pages/Workshops.jsx"));
+const WorkshopEdit = lazy(() => import("./pages/WorkshopEdit.jsx"));
+const Registrations = lazy(() => import("./pages/Registrations.jsx"));
+const Payments = lazy(() => import("./pages/Payments.jsx"));
+const Users = lazy(() => import("./pages/Users.jsx"));
+const Roles = lazy(() => import("./pages/Roles.jsx"));
+const Audit = lazy(() => import("./pages/Audit.jsx"));
+const Settings = lazy(() => import("./pages/Settings.jsx"));
+const Communication = lazy(() => import("./pages/Communication.jsx"));
+const Attendance = lazy(() => import("./pages/Attendance.jsx"));
+const Certificates = lazy(() => import("./pages/Certificates.jsx"));
+const Verify = lazy(() => import("./pages/Verify.jsx"));
+const Analytics = lazy(() => import("./pages/Analytics.jsx"));
+const System = lazy(() => import("./pages/System.jsx"));
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -53,6 +56,7 @@ export default function App() {
       <BrandingProvider>
       <AuthProvider>
         <ToastProvider>
+          <Suspense fallback={<div className="center-screen">Loading…</div>}>
           <Routes>
             <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
             <Route path="/verify" element={<Verify />} />
@@ -77,6 +81,7 @@ export default function App() {
             <Route path="/analytics" element={<Protected><Analytics /></Protected>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </Suspense>
         </ToastProvider>
       </AuthProvider>
       </BrandingProvider>

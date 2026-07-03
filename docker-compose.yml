@@ -1,0 +1,42 @@
+# Full local/self-hosted stack: MongoDB + backend API + admin panel.
+# Copy backend/.env.example → backend/.env and fill it in, then: docker compose up --build
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    env_file:
+      - ./backend/.env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/youngness
+      PORT: "4000"
+      NODE_ENV: production
+    ports:
+      - "4000:4000"
+    volumes:
+      - uploads:/app/uploads   # persist local-adapter media (use Cloudinary in prod)
+
+  admin:
+    build:
+      context: ./admin
+      args:
+        VITE_API_BASE: http://localhost:4000
+        VITE_PUBLIC_SITE_URL: http://localhost:5500
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  mongo-data:
+  uploads:

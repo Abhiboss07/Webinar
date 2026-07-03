@@ -26,4 +26,13 @@ const publicReadLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-module.exports = { loginLimiter, writeLimiter, publicReadLimiter };
+// Broad safety net across the whole API (generous; per-route limiters stay stricter).
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: parseInt(process.env.API_RATE_MAX || "600", 10),
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { status: "error", message: "Too many requests — please slow down." },
+});
+
+module.exports = { loginLimiter, writeLimiter, publicReadLimiter, apiLimiter };
