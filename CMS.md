@@ -576,12 +576,43 @@ checkin/generate → 403); audit. Admin builds.
 `BarcodeDetector`/webcam scanner is a UI add-on); certificate PDF renders text + verify-QR (embedding
 remote logo/background images is a later enhancement); offline check-in queue (client-side) not yet built.
 
+## Phase 2.11 — Analytics & Reports ✅
+
+A cross-module BI layer — read-only aggregations over the data every prior module already produces (no
+schema changes). RBAC `analytics` (view/export); exports audited.
+
+**Reports (7):** **Executive** (revenue, registrations, active workshops, attendance %, certificates,
+conversion %, refund %, avg ticket, repeat customers, monthly growth); **Revenue** (daily series,
+by-workshop, payment-method split, refund trend, 7-day forecast); **Registrations** (daily, profession &
+city distribution, **conversion funnel** Registered→Paid→Attended→Certified, cancelled/refunded/
+waitlisted); **Attendance** (rate, no-shows, check-ins-by-hour, **day×hour heatmap**, by-workshop);
+**Certificates** (issued/pending/revoked, by-workshop); **Communication** (by channel/status, delivery %,
+failure %, retries, opens/clicks); **Workshops** (top/lowest by revenue, with registrations/attendance/
+certs/completion). Custom **date ranges** (span-clamped to a year); **CSV/XLSX export** per report.
+
+**APIs added:** `GET /api/analytics/{executive,revenue,registrations,attendance,certificates,
+communication,workshops}` + `/export?report=&format=`. **Admin:** Analytics page with 7 tabs reusing the
+validated SVG charts (area/line, bars, **heatmap**) + date range + exports.
+
+**Database changes:** none. **Verified (20/20 e2e):** executive totals (revenue == paid×price, certs=3,
+attendance %); revenue/registration daily series populate; **funnel** (40→…→3 certified); attendance
+24-hour series + heatmap; certificate/communication/workshop aggregates; **date-range filter** (future →
+all-zero); CSV + XLSX (PK) exports; RBAC (viewer view-only, export → 403); audit. Caught & fixed a
+range-truncation bug (daily series is now span-clamped). Admin builds.
+
+**Known limitations:** gender/age analytics aren't available (not collected); "downloaded/verified"
+certificate counts and email open/click need tracking hooks (fields exist, not yet incremented); forecast
+is a simple 7-day moving-average projection; PDF/print export and scheduled/saved reports are follow-ups.
+
 ## Roadmap — remaining modules (revised order)
 
-**2.11 Analytics & Reports** · **2.12 Backup, Restore & System Health** · **3.0 AI Assistant**.
-Cross-cutting: a **Form Builder** (client adds registration fields — Hospital Name, License Number… —
-without code); wiring the public site to `/api/settings/public` (theme colours, maintenance screen); email
-open/click tracking; a cron to auto-enqueue workshop reminders; and a webcam QR scanner + offline check-in.
+**2.12 System Administration** (backup/restore, health monitoring, audit viewer, storage/queue/log
+viewers, error reports) · **2.13 White-label & Branding** (wire the public site to `/api/settings/public`:
+theme colours, fonts, favicon, maintenance screen) · **2.14 AI Assistant** (email/WhatsApp/workshop/
+certificate copy, report summaries, dashboard insights) · **3.0 Production Release** (performance, caching,
+security hardening, Docker, CI/CD, monitoring, docs). Cross-cutting: **Form Builder** (dynamic registration
+fields); email open/click tracking; cron auto-reminders; webcam QR scanner + offline check-in; PDF/scheduled
+reports.
 
 Homepage CMS with per-section enable/disable + drag-reorder + preview; **Media Manager** on Cloudinary;
 **Registration Manager** (search/filter/sort/CSV+Excel/status/bulk — built on the `Registration` model

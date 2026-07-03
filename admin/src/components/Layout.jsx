@@ -4,7 +4,10 @@ import { useAuth } from "../lib/auth.jsx";
 
 // Each item names the resource it needs `view` on; the nav hides what you can't see.
 const NAV = [
-  { group: "Overview", items: [{ to: "/", label: "Dashboard", ico: "▦", end: true, res: "dashboard" }] },
+  { group: "Overview", items: [
+    { to: "/", label: "Dashboard", ico: "▦", end: true, res: "dashboard" },
+    { to: "/analytics", label: "Analytics", ico: "📊", res: "analytics" },
+  ] },
   {
     group: "Workshops", items: [
       { to: "/workshops", label: "Workshops", ico: "🎓", res: "workshops" },

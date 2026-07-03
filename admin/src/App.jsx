@@ -19,6 +19,7 @@ import Communication from "./pages/Communication.jsx";
 import Attendance from "./pages/Attendance.jsx";
 import Certificates from "./pages/Certificates.jsx";
 import Verify from "./pages/Verify.jsx";
+import Analytics from "./pages/Analytics.jsx";
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -69,6 +70,7 @@ export default function App() {
             <Route path="/communication" element={<Protected><Communication /></Protected>} />
             <Route path="/attendance" element={<Protected><Attendance /></Protected>} />
             <Route path="/certificates" element={<Protected><Certificates /></Protected>} />
+            <Route path="/analytics" element={<Protected><Analytics /></Protected>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </ToastProvider>

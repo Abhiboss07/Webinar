@@ -114,6 +114,15 @@ export const api = {
   certEmail: (id) => request(`/api/certificates/${id}/email`, { method: "POST" }),
   certVerify: (n, t) => request(`/api/certificates/verify?n=${encodeURIComponent(n)}&t=${encodeURIComponent(t || "")}`, { auth: false }),
 
+  // ---- Analytics ----
+  anExecutive: () => request("/api/analytics/executive"),
+  anRevenue: (p = {}) => { const qs = new URLSearchParams(Object.entries(p).filter(([, v]) => v)).toString(); return request(`/api/analytics/revenue${qs ? "?" + qs : ""}`); },
+  anRegistrations: (p = {}) => { const qs = new URLSearchParams(Object.entries(p).filter(([, v]) => v)).toString(); return request(`/api/analytics/registrations${qs ? "?" + qs : ""}`); },
+  anAttendance: () => request("/api/analytics/attendance"),
+  anCertificates: () => request("/api/analytics/certificates"),
+  anCommunication: () => request("/api/analytics/communication"),
+  anWorkshops: () => request("/api/analytics/workshops"),
+
   getConfig: () => request("/api/site-config", { auth: false }),
   // Draft workflow.
   getDraft: () => request("/api/site-config/draft"),

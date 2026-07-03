@@ -117,6 +117,38 @@ export function Donut({ data }) {
   );
 }
 
+/* ---- Heatmap (day × hour), sequential intensity ---- */
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+export function Heatmap({ data }) {
+  const [hover, setHover] = useState(null);
+  const grid = {}; // day(1-7) → hour → value
+  let max = 1;
+  (data || []).forEach((d) => { (grid[d.day] = grid[d.day] || {})[d.hour] = d.value; if (d.value > max) max = d.value; });
+  const cell = (day, hour) => (grid[day] && grid[day][hour]) || 0;
+  return (
+    <div className="chart-wrap" style={{ overflowX: "auto" }}>
+      <table className="heatmap">
+        <tbody>
+          {[1, 2, 3, 4, 5, 6, 7].map((day) => (
+            <tr key={day}>
+              <td className="hm-day">{DAYS[day - 1]}</td>
+              {Array.from({ length: 24 }, (_, h) => {
+                const v = cell(day, h);
+                const a = v ? 0.15 + 0.85 * (v / max) : 0;
+                return <td key={h} className="hm-cell" title={`${DAYS[day - 1]} ${h}:00 — ${v}`}
+                  style={{ background: v ? `color-mix(in srgb, var(--series-1) ${Math.round(a * 100)}%, var(--surface-2))` : "var(--surface-2)" }}
+                  onMouseEnter={() => setHover({ day, h, v })} onMouseLeave={() => setHover(null)} />;
+              })}
+            </tr>
+          ))}
+          <tr><td /> {[0, 6, 12, 18, 23].map((h) => <td key={h} className="hm-hour" colSpan={h === 23 ? 1 : 6}>{h}:00</td>)}</tr>
+        </tbody>
+      </table>
+      {hover && <div className="muted" style={{ fontSize: 12, marginTop: 6 }}>{DAYS[hover.day - 1]} {hover.h}:00 — <b>{hover.v}</b> check-ins</div>}
+    </div>
+  );
+}
+
 /* ---- Horizontal bars, categorical (registration source) with direct labels ---- */
 export function HBars({ data }) {
   const max = Math.max(1, ...data.map((d) => d.count));

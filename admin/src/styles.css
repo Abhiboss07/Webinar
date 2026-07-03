@@ -271,6 +271,12 @@ textarea { resize: vertical; min-height: 78px; line-height: 1.5; }
 .gallery-add { aspect-ratio: 1; border: 1.5px dashed var(--border-strong); border-radius: 10px; background: var(--surface-2); color: var(--text-muted); font-weight: 600; }
 .gallery-add:hover { border-color: var(--brand); color: var(--text); }
 
+/* ---------- heatmap ---------- */
+.heatmap { border-collapse: separate; border-spacing: 2px; }
+.heatmap .hm-day { font-size: 11px; color: var(--text-muted); padding-right: 8px; text-align: right; white-space: nowrap; }
+.heatmap .hm-cell { width: 15px; height: 15px; border-radius: 3px; }
+.heatmap .hm-hour { font-size: 10px; color: var(--text-faint); text-align: left; padding-top: 4px; }
+
 /* ---------- CRM (registrations) ---------- */
 .crm-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .crm-toolbar select, .crm-toolbar input { width: auto; }
