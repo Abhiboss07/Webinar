@@ -10,6 +10,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
+    "seed:roles": "node scripts/seedRoles.js",
     "seed:admin": "node scripts/seedAdmin.js",
     "migrate:config": "node scripts/migrateConfig.js",
     "seed:workshop": "node scripts/seedWorkshopFromConfig.js"

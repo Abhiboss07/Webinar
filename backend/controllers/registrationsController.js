@@ -5,6 +5,7 @@
  * never touches the public sign-up or payment-verification write paths.
  */
 const Registration = require("../models/Registration");
+const audit = require("../services/audit");
 const { buildCsv, buildXlsx } = require("../services/exportRegistrations");
 
 const SORTABLE = new Set(["createdAt", "fullName", "paymentStatus", "amount"]);
@@ -165,6 +166,7 @@ async function bulk(req, res) {
     const { ids, action, patch: p } = req.body || {};
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ status: "error", message: "No rows selected" });
     if (action === "delete") {
+      if (req.user && req.user.can && !req.user.can("registrations", "delete")) return res.status(403).json({ status: "error", message: "You don't have permission to delete registrations" });
       const r = await Registration.deleteMany({ _id: { $in: ids } });
       return res.json({ status: "success", deleted: r.deletedCount });
     }
@@ -189,6 +191,7 @@ async function exportRows(req, res) {
     const filter = req.query.ids ? { _id: { $in: String(req.query.ids).split(",").filter(Boolean) } } : buildFilter(req.query);
     const rows = await Registration.find(filter).sort({ createdAt: -1 }).limit(50000).lean();
     const stamp = new Date().toISOString().slice(0, 10);
+    await audit.record(req, "registration.export", { resource: "registrations", newValue: { format, count: rows.length } });
 
     if (format === "xlsx") {
       const buf = await buildXlsx(rows);

@@ -5,6 +5,7 @@
  * /api/site-config; these endpoints are admin-only.
  */
 const Workshop = require("../models/Workshop");
+const audit = require("../services/audit");
 const { clean, slugify } = require("../utils/helpers");
 
 /** Ensure a slug is unique (append -2, -3… ), ignoring one id (for updates). */
@@ -140,6 +141,7 @@ async function setStatus(req, res) {
       if (next === "draft") { w.archivedAt = null; w.scheduledFor = null; }
     }
     await w.save();
+    if (next === "published") await audit.record(req, "workshop.publish", { resource: "workshops", targetId: w._id, newValue: { slug: w.slug, scheduledFor: w.scheduledFor } });
     return res.json({ status: "success", workshop: w.summary() });
   } catch (err) {
     console.error("[workshops/setStatus]", err.message);

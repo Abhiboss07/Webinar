@@ -3,18 +3,21 @@ const express = require("express");
 const router = express.Router();
 
 const c = require("../controllers/workshopController");
-const { requireAuth, requireRole } = require("../middleware/auth");
+const { requireAuth, requirePermission } = require("../middleware/auth");
 const { writeLimiter } = require("../middleware/rateLimit");
 
-const editor = [requireAuth, requireRole("admin", "editor")];
+const view = requirePermission("workshops", "view");
+const edit = requirePermission("workshops", "edit");
+const publish = requirePermission("workshops", "publish");
 
-router.get("/", ...editor, c.list);
-router.post("/", ...editor, writeLimiter, c.create);
-router.get("/:id", ...editor, c.getOne);
-router.put("/:id", ...editor, writeLimiter, c.update);
-router.delete("/:id", ...editor, c.remove);
-router.post("/:id/duplicate", ...editor, c.duplicate);
-router.post("/:id/activate", ...editor, c.activate);
-router.post("/:id/status", ...editor, c.setStatus);
+router.use(requireAuth);
+router.get("/", view, c.list);
+router.post("/", requirePermission("workshops", "create"), writeLimiter, c.create);
+router.get("/:id", view, c.getOne);
+router.put("/:id", edit, writeLimiter, c.update);
+router.delete("/:id", requirePermission("workshops", "delete"), c.remove);
+router.post("/:id/duplicate", requirePermission("workshops", "create"), c.duplicate);
+router.post("/:id/activate", publish, c.activate);
+router.post("/:id/status", publish, c.setStatus);
 
 module.exports = router;

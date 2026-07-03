@@ -138,8 +138,9 @@ npm run seed:workshop        # creates the first active Workshop from that conte
 npm start                    # or: npm run dev
 ```
 
-`seed:admin` is safe to re-run — it resets the password to the current `ADMIN_PASSWORD` (handy if the
-client forgets it). Then run the admin panel:
+`seed:admin` also seeds the seven RBAC roles and makes the bootstrap account a **Super Admin**. It is
+safe to re-run — it resets the password to the current `ADMIN_PASSWORD` (handy if the client forgets it).
+Then run the admin panel:
 
 ```bash
 cd admin
@@ -410,13 +411,56 @@ credentials** to exercise (logic implemented + guarded; tested via the manual/no
 of the whole list isn't built (per-payment receipt/invoice + CSV/XLSX cover it); offset (not cursor)
 pagination.
 
+## Phase 2.7 — User & Role Management (RBAC) ✅
+
+A production-grade RBAC system. **Seeded roles preserve the previous access** (admin → full, editor →
+content_editor), so nothing broke when permission checks were added across all modules (verified by
+re-running the 2.2 and 2.6 suites).
+
+**Roles & permissions:** 7 seeded system roles — Super Admin (bypass), Admin, Manager, Finance, Content
+Editor, Support, Viewer — over 12 resources × 9 actions (view/create/edit/delete/publish/export/refund/
+approve/manage_users). Super Admin can edit any role's matrix and create custom roles.
+
+**Immediate effect:** `requireAuth` loads each user's *current* role + permissions from the DB per request
+(8s role cache, cleared on role edits), so **role and permission changes apply to existing sessions
+instantly** — and deactivating a user blocks their token immediately.
+
+**Auth hardening:** access JWT + opaque **refresh tokens** (hashed, stored as `Session`s → session
+list/revoke), Remember-Me (7d/30d), account **lock after 5 failed logins**, strong-password policy,
+password change / forgot / reset (tokens generated; email delivery is Module 2.8), secure logout
+(session revoke). Bearer-token auth (no cookies) ⇒ CSRF not applicable to the API.
+
+**Audit log:** every security/data action (`login`, `login.failed`, `logout`, `user.*`, `role.*`,
+`content.publish`, `workshop.publish`, `payment.refund`, `media.delete`, `registration.export`,
+`password.*`) records user, IP, user-agent, timestamp, and old/new values.
+
+**Models:** new `Role`, `AuditLog`, `Session`; `User` extended (role→Role.key, avatar, invite/reset
+tokens, failed-login/lock, 2FA-ready flag, lastLoginIp). **APIs added:** `/api/auth/{refresh,logout,
+change-password,forgot-password,reset-password}`; `/api/users` (list/invite/get/update/reset-password/
+delete/revoke-session); `/api/roles` (list/create/update/delete); `/api/audit`. Existing routes now use
+`requirePermission(resource, action)`.
+
+**Admin:** Users page (invite dialog, drawer with role change / activate / reset / sessions), Roles page
+(**permission matrix editor** + custom roles), Audit Log page, Remember-Me + Forgot-password on login,
+transparent token refresh, and **permission-gated navigation** (you only see what you can access).
+
+**Verified (27/27 e2e + no regressions):** login (token+refresh+isSuperAdmin), /me, refresh, invite →
+set-password, viewer denied edit/users/roles/refund (403), super-admin bypass, **role change immediate**,
+**permission change immediate**, finance can refund but not edit CMS, deactivation blocks token, self /
+last-super-admin guards, **account lock (423)**, audit populated with ip+timestamp, weak-password
+rejection. Admin builds (58 modules).
+
+**Known limitations:** invite/reset tokens are returned in-response in non-production (surfaced to the
+admin) until **SMTP is wired in Module 2.8**; 2FA is schema-ready but not enforced; refresh tokens aren't
+rotated on use (revocable via sessions); per-page UI gating hides nav but the backend is the real gate.
+
 ## Roadmap — remaining modules (revised order)
 
-**2.7 User & Role Management** · **2.8 Email + WhatsApp Automation** · **2.9 Certificate Generator** ·
-**2.10 Attendance & QR Scanner** · **2.11 Analytics & Reports** · **2.12 Audit Logs & Backup** ·
-**3.0 AI Assistant**. Cross-cutting: a **Theme & Branding** settings section (logo, favicon, colours,
-fonts, contact, social, footer) and a **Form Builder** (client adds registration fields — Hospital Name,
-License Number… — without code, rendered on the form and stored per-registration).
+**2.8 Settings & Site Configuration** (SMTP/email, Razorpay & Cloudinary & Google-Sheets config stored
+securely, branding: logo/favicon/colours/fonts, contact, social, SEO — so the client never edits config
+files) · **2.9 Certificate & Attendance (QR)** · **2.10 Email + WhatsApp Automation** ·
+**2.11 Analytics & Reports** · **2.12 Backup, Restore & Audit** · **3.0 AI Assistant**. Cross-cutting: a
+**Form Builder** (client adds registration fields — Hospital Name, License Number… — without code).
 
 Homepage CMS with per-section enable/disable + drag-reorder + preview; **Media Manager** on Cloudinary;
 **Registration Manager** (search/filter/sort/CSV+Excel/status/bulk — built on the `Registration` model

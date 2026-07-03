@@ -8,6 +8,7 @@
 const Registration = require("../models/Registration");
 const SiteConfig = require("../models/SiteConfig");
 const razorpayService = require("../services/razorpayService");
+const audit = require("../services/audit");
 const { buildCsv, buildXlsx, PAYMENT_COLUMNS } = require("../services/exportRegistrations");
 const { buildPdf } = require("../services/invoice");
 
@@ -202,6 +203,7 @@ async function refund(req, res) {
     reg.paymentStatus = "Refunded";
     reg.activity.push({ type: "refund", detail: `Refunded ${amount} ${reg.currency}${useGateway ? "" : " (manual)"}`, by });
     await reg.save();
+    await audit.record(req, "payment.refund", { resource: "payments", targetId: reg._id, newValue: { amount, gateway: useGateway, refundId: reg.refundId } });
     return res.json({ status: "success", payment: { ...reg.toObject(), gateway: "Razorpay" } });
   } catch (err) {
     console.error("[payments/refund]", err.message);

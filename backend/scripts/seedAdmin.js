@@ -11,6 +11,7 @@
 const config = require("../config");
 const { connectDB, mongoose } = require("../db/connect");
 const User = require("../models/User");
+const { ensureRoles } = require("./seedRoles");
 
 async function main() {
   if (!config.admin.email || !config.admin.password) {
@@ -23,18 +24,22 @@ async function main() {
   }
 
   await connectDB();
+  await ensureRoles(); // RBAC roles must exist before assigning one
 
   let user = await User.findOne({ email: config.admin.email }).select("+passwordHash");
   const isNew = !user;
   if (!user) {
-    user = new User({ email: config.admin.email, name: config.admin.name, role: "admin" });
+    // The bootstrap account is a Super Admin (full access, incl. role management).
+    user = new User({ email: config.admin.email, name: config.admin.name, role: "super_admin" });
   } else {
     user.name = config.admin.name || user.name;
+    if (user.role !== "super_admin") user.role = "super_admin";
   }
   await user.setPassword(config.admin.password);
+  user.active = true; user.failedLoginAttempts = 0; user.lockUntil = null;
   await user.save();
 
-  console.log(`✓ Admin ${isNew ? "created" : "password reset"}: ${user.email} (role: ${user.role})`);
+  console.log(`✓ Admin ${isNew ? "created" : "updated"}: ${user.email} (role: ${user.role})`);
   await mongoose.disconnect();
   process.exit(0);
 }

@@ -16,6 +16,7 @@
  */
 const SiteConfig = require("../models/SiteConfig");
 const Workshop = require("../models/Workshop");
+const audit = require("../services/audit");
 const { normalizeManifest } = require("../config/sections");
 
 function isPlainObject(v) {
@@ -140,6 +141,7 @@ async function publish(req, res) {
     doc.updatedBy = req.user ? req.user.id : null;
     doc.markModified("data"); doc.markModified("draft"); doc.markModified("history");
     await doc.save();
+    await audit.record(req, "content.publish", { resource: "homepage_cms", newValue: { version: doc.version } });
     return res.json({ status: "success", version: doc.version, publishedAt: doc.publishedAt });
   } catch (err) {
     console.error("[site-config/publish] error:", err.message);

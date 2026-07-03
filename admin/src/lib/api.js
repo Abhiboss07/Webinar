@@ -1,36 +1,71 @@
-// Thin API client for the CMS backend. Attaches the JWT and centralises errors.
+// Thin API client for the CMS backend. Attaches the JWT, transparently refreshes
+// the access token on 401 (once), and centralises errors.
 const BASE = (import.meta.env.VITE_API_BASE || "http://localhost:4000").replace(/\/$/, "");
 const TOKEN_KEY = "youngness_admin_token";
+const REFRESH_KEY = "youngness_admin_refresh";
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY) || "";
 export const setToken = (t) => (t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY));
+export const getRefresh = () => localStorage.getItem(REFRESH_KEY) || "";
+export const setRefresh = (t) => (t ? localStorage.setItem(REFRESH_KEY, t) : localStorage.removeItem(REFRESH_KEY));
 
-async function request(path, { method = "GET", body, auth = true } = {}) {
+let refreshing = null; // single-flight refresh promise
+async function tryRefresh() {
+  if (!getRefresh()) return false;
+  if (!refreshing) {
+    refreshing = fetch(BASE + "/api/auth/refresh", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ refreshToken: getRefresh() }) })
+      .then((r) => (r.ok ? r.json() : null)).then((j) => { if (j && j.token) { setToken(j.token); return true; } return false; })
+      .catch(() => false).finally(() => { refreshing = null; });
+  }
+  return refreshing;
+}
+
+async function raw(path, { method = "GET", body, auth = true } = {}) {
   const headers = { "Content-Type": "application/json" };
   if (auth && getToken()) headers.Authorization = `Bearer ${getToken()}`;
+  return fetch(BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+}
 
+async function request(path, opts = {}) {
+  const auth = opts.auth !== false;
   let res;
-  try {
-    res = await fetch(BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
-  } catch (_) {
-    throw new Error("Cannot reach the server. Check your connection and the API URL.");
+  try { res = await raw(path, opts); }
+  catch (_) { throw new Error("Cannot reach the server. Check your connection and the API URL."); }
+
+  // Transparent refresh on 401 (not for the auth endpoints themselves).
+  if (res.status === 401 && auth && !/\/auth\/(login|refresh)/.test(path)) {
+    const ok = await tryRefresh();
+    if (ok) { try { res = await raw(path, opts); } catch (_) { /* fallthrough */ } }
+    if (res.status === 401) { setToken(""); setRefresh(""); window.dispatchEvent(new Event("auth:expired")); }
   }
 
   let json = null;
   try { json = await res.json(); } catch (_) { /* non-JSON */ }
-
-  if (res.status === 401 && auth) {
-    setToken("");
-    // Let the app redirect to login on the next render.
-    if (!path.includes("/auth/login")) window.dispatchEvent(new Event("auth:expired"));
-  }
   if (!res.ok) throw new Error((json && json.message) || `Request failed (${res.status})`);
   return json || {};
 }
 
 export const api = {
-  login: (email, password) => request("/api/auth/login", { method: "POST", body: { email, password }, auth: false }),
+  login: (email, password, rememberMe) => request("/api/auth/login", { method: "POST", body: { email, password, rememberMe }, auth: false }),
+  logout: () => request("/api/auth/logout", { method: "POST", body: { refreshToken: getRefresh() }, auth: false }),
   me: () => request("/api/auth/me"),
+  changePassword: (currentPassword, newPassword) => request("/api/auth/change-password", { method: "POST", body: { currentPassword, newPassword } }),
+  forgotPassword: (email) => request("/api/auth/forgot-password", { method: "POST", body: { email }, auth: false }),
+  resetPassword: (token, newPassword) => request("/api/auth/reset-password", { method: "POST", body: { token, newPassword }, auth: false }),
+
+  // ---- Users / Roles / Audit (RBAC) ----
+  users: () => request("/api/users"),
+  userGet: (id) => request(`/api/users/${id}`),
+  userInvite: (body) => request("/api/users", { method: "POST", body }),
+  userUpdate: (id, body) => request(`/api/users/${id}`, { method: "PATCH", body }),
+  userReset: (id) => request(`/api/users/${id}/reset-password`, { method: "POST" }),
+  userDelete: (id) => request(`/api/users/${id}`, { method: "DELETE" }),
+  userRevokeSession: (id, sid) => request(`/api/users/${id}/sessions/${sid}`, { method: "DELETE" }),
+  roles: () => request("/api/roles"),
+  roleCreate: (body) => request("/api/roles", { method: "POST", body }),
+  roleUpdate: (id, body) => request(`/api/roles/${id}`, { method: "PATCH", body }),
+  roleDelete: (id) => request(`/api/roles/${id}`, { method: "DELETE" }),
+  audit: (params = {}) => { const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== "" && v != null)).toString(); return request(`/api/audit${qs ? "?" + qs : ""}`); },
   getConfig: () => request("/api/site-config", { auth: false }),
   // Draft workflow.
   getDraft: () => request("/api/site-config/draft"),

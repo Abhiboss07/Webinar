@@ -11,6 +11,9 @@ import Workshops from "./pages/Workshops.jsx";
 import WorkshopEdit from "./pages/WorkshopEdit.jsx";
 import Registrations from "./pages/Registrations.jsx";
 import Payments from "./pages/Payments.jsx";
+import Users from "./pages/Users.jsx";
+import Roles from "./pages/Roles.jsx";
+import Audit from "./pages/Audit.jsx";
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -53,6 +56,9 @@ export default function App() {
             <Route path="/workshops/:id" element={<Protected><WorkshopEdit /></Protected>} />
             <Route path="/registrations" element={<Protected><Registrations /></Protected>} />
             <Route path="/payments" element={<Protected><Payments /></Protected>} />
+            <Route path="/users" element={<Protected><Users /></Protected>} />
+            <Route path="/roles" element={<Protected><Roles /></Protected>} />
+            <Route path="/audit" element={<Protected><Audit /></Protected>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </ToastProvider>

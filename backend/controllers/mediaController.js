@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const Media = require("../models/Media");
 const storage = require("../services/storage");
 const mediaUsage = require("../services/mediaUsage");
+const audit = require("../services/audit");
 
 const ALLOWED = new Set([
   "image/png", "image/jpeg", "image/webp", "image/gif", "image/svg+xml",
@@ -162,6 +163,7 @@ async function remove(req, res) {
     }
     try { await storage.destroy(media.publicId, media.resourceType); } catch (_) { /* ignore */ }
     await media.deleteOne();
+    await audit.record(req, "media.delete", { resource: "media", targetId: media._id, oldValue: { originalFilename: media.originalFilename } });
     return res.json({ status: "success", usageCount });
   } catch (err) {
     return res.status(500).json({ status: "error", message: "Could not delete asset" });
