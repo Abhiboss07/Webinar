@@ -5,6 +5,9 @@
  */
 const razorpayService = require("../services/razorpayService");
 const sheetService = require("../services/sheetService");
+const registrationStore = require("../services/registrationStore");
+const triggers = require("../services/triggers");
+const Registration = require("../models/Registration");
 const { clean } = require("../utils/helpers");
 
 async function verifyPayment(req, res) {
@@ -16,7 +19,7 @@ async function verifyPayment(req, res) {
   // Presence is validated by middleware/validate.js (validateVerify).
 
   // 1) Cryptographic verification — the gate for everything below.
-  const valid = razorpayService.verifySignature({ orderId, paymentId, signature });
+  const valid = await razorpayService.verifySignature({ orderId, paymentId, signature });
   if (!valid) {
     console.warn("[verify-payment] signature mismatch for", regId, orderId);
     return res.status(400).json({ status: "failed", message: "Signature verification failed" });
@@ -46,6 +49,15 @@ async function verifyPayment(req, res) {
   } catch (err) {
     console.error("[verify-payment] sheet update failed (payment WAS verified):", err.message, { regId, paymentId });
   }
+
+  // Mirror the Paid status into MongoDB (best-effort; never throws).
+  await registrationStore.markPaid(regId, {
+    orderId, paymentId, method, amount: amountRupees, currency: "INR",
+    transactionTime: new Date().toISOString(),
+  });
+
+  // Fire payment-success comms (best-effort).
+  try { const doc = await Registration.findOne({ regId }).lean(); if (doc) await triggers.fire("payment.success", { registration: doc }); } catch (_) { /* ignore */ }
 
   return res.json({ status: "success", paymentId: paymentId, orderId: orderId, method: method, amount: amountRupees });
 }

@@ -5,14 +5,15 @@
  * the shared token so the Apps Script accepts the write. Requires Node 18+
  * (global fetch).
  */
-const config = require("../config");
+const provider = require("./settingsProvider");
 
 async function callSheet(payload) {
-  if (!config.sheet.endpoint) throw new Error("GOOGLE_SHEET_ENDPOINT is not configured");
-  const res = await fetch(config.sheet.endpoint, {
+  const { endpoint, token } = await provider.sheets(); // admin-managed → env fallback
+  if (!endpoint) throw new Error("Google Sheets endpoint is not configured");
+  const res = await fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(Object.assign({ token: config.sheet.token }, payload)),
+    body: JSON.stringify(Object.assign({ token }, payload)),
     redirect: "follow",
   });
   const text = await res.text();

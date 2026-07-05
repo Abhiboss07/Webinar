@@ -1,14 +1,17 @@
 /* ============================================================================
-   WORKSHOP CONFIG  —  THE SINGLE SOURCE OF TRUTH
+   WORKSHOP CONFIG  —  BOOTSTRAP + OFFLINE FALLBACK  (content is CMS-driven)
    ----------------------------------------------------------------------------
-   To launch a NEW workshop, edit ONLY this file and replace images in /assets.
-   No layout/code changes are ever required.
+   Content is now managed in the Admin CMS and served from the database via
+   GET /api/site-config. This file is NO LONGER the source of truth for content.
+   It is kept for two roles only:
+     1) BOOTSTRAP — it supplies the API base URL (`api.dev` / `api.prod`) that
+        js/config.js needs to know WHERE to fetch the live content from.
+     2) OFFLINE FALLBACK — if the API is briefly unreachable, the public page
+        still renders from these bundled values instead of showing nothing.
+   It is also the one-time seed source for `backend/scripts/migrateConfig.js`.
+   Edit content in the Admin CMS; only update `api.prod` (deploy URL) here.
 
-   This one file holds EVERYTHING: workshop facts, price, venue, date, time,
-   map, contact, the API base URL, the (public) Razorpay key, images and
-   trainer details. Change it once → the whole site updates.
-
-   HOW IT WORKS
+   HOW THE FALLBACK WORKS
    • Every string can reuse "launch facts" with {{tokens}} so you set a value
      ONCE (in the `workshop` block) and it updates everywhere it appears.
        Available tokens: {{name}} {{date}} {{time}} {{venue}} {{price}}
