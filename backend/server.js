@@ -12,6 +12,15 @@ const { connectDB } = require("./db/connect");
 async function start() {
   try {
     await connectDB();
+    // Razorpay verification/demo login (idempotent — creates only if missing,
+    // repairs password/role drift). See scripts/seedRazorpayDemo.js.
+    try {
+      const { ensureRazorpayDemoUser } = require("./scripts/seedRazorpayDemo");
+      const { user, isNew } = await ensureRazorpayDemoUser();
+      console.log(`✓ Razorpay demo account ${isNew ? "created" : "verified"}: ${user.email}`);
+    } catch (e) {
+      console.error("⚠  Razorpay demo account seed failed:", e.message);
+    }
   } catch (err) {
     // Don't crash the payment flow if the DB is briefly unreachable — log loudly.
     // Content endpoints will error until Mongo recovers; payments still work.

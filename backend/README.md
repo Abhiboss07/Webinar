@@ -52,3 +52,25 @@ project so it accepts writes only from this backend.
 ## Frontend wiring
 Set the public `payment.keyId` and `api.prod` (this server's URL) in
 `../frontend/config/workshop-config.js`.
+
+## Razorpay verification (demo) account
+Razorpay's website-verification team needs a working test login. A permanent,
+read-only demo account is seeded **automatically at every server boot**
+(`server.js` → `scripts/seedRazorpayDemo.js`) and can also be seeded manually:
+
+```bash
+npm run seed:razorpay-demo
+```
+
+- **Where it lives:** the `users` collection in MongoDB (hashed with bcrypt,
+  same as admin accounts) — never in the frontend or in any committed config.
+- **Credentials:** `razorpay-demo@awishclinic.com` / `StrongPass@123`
+  (override with `RAZORPAY_DEMO_EMAIL` / `RAZORPAY_DEMO_PASSWORD` env vars).
+- **Access:** role `viewer` — it can log in to the admin panel but is
+  read-only everywhere. The public registration → payment → Razorpay Checkout
+  flow requires **no login** (any visitor can complete it), so this account
+  exists purely to satisfy the "test login" requirement.
+- **Idempotent:** seeding never creates duplicates (unique email index +
+  find-or-create). If the password, role, active flag, or lockout state has
+  drifted, re-seeding repairs it so the credentials given to Razorpay keep
+  working.
