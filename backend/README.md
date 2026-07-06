@@ -50,8 +50,31 @@ project so it accepts writes only from this backend.
 - CORS is restricted to `FRONTEND_URL`; localhost origins are auto-allowed only in development.
 
 ## Frontend wiring
-Set the public `payment.keyId` and `api.prod` (this server's URL) in
-`../frontend/config/workshop-config.js`.
+Set `api.prod` (this server's public URL) in
+`../frontend/config/workshop-config.js` (bootstrap + offline fallback; content
+itself is CMS-driven). The frontend auto-uses `api.dev` (localhost:4000) when
+served from localhost. The public Razorpay Key ID is returned by
+`/create-order` — never configured in the frontend.
+
+## Startup (fail-fast)
+`server.js` boots strictly in this order and **exits** on failure — the app
+never runs half-configured (no more "buffering timed out" zombies):
+
+1. **Env validation** — missing vars *and* leftover `.env.example` placeholder
+   values (e.g. `rzp_test_ADD_LATER`) abort the boot in production
+   (`config.envProblems()`, also run by `npm start`'s prestart hook).
+2. **MongoDB connect** — Express, workers, queues and seeds all wait for it;
+   if Mongo is unreachable the process exits and the host restarts it.
+   Mongoose command buffering is disabled (`db/connect.js`).
+3. **Account bootstrap** — admin (from `ADMIN_EMAIL`/`ADMIN_PASSWORD`, create
+   **only if missing**, never resets an existing password) and the Razorpay
+   demo account below.
+4. **Workers** (comm queue, scheduled backups), then `listen()`.
+
+`GET /health` returns per-dependency status (Mongo, Razorpay, Cloudinary,
+SMTP, Sheets, env) — booleans only, never secrets — with HTTP 503 when a
+payment-critical check fails. `GET /health/ready` stays a bare DB probe for
+container healthchecks.
 
 ## Razorpay verification (demo) account
 Razorpay's website-verification team needs a working test login. A permanent,
@@ -64,7 +87,7 @@ npm run seed:razorpay-demo
 
 - **Where it lives:** the `users` collection in MongoDB (hashed with bcrypt,
   same as admin accounts) — never in the frontend or in any committed config.
-- **Credentials:** `razorpay-demo@awishclinic.com` / `StrongPass@123`
+- **Credentials:** `razorpay-demo@youngness.com` / `Demo@12345`
   (override with `RAZORPAY_DEMO_EMAIL` / `RAZORPAY_DEMO_PASSWORD` env vars).
 - **Access:** role `viewer` — it can log in to the admin panel but is
   read-only everywhere. The public registration → payment → Razorpay Checkout

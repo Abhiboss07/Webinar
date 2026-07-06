@@ -1,46 +1,73 @@
 "use strict";
 /**
- * Youngness Webinar — backend entry point.
- * Connects to MongoDB (CMS content + admin users), then starts the Express app
- * (see app.js). The Razorpay Key Secret and JWT secret stay on the server; only
- * the public Razorpay Key ID ever reaches the browser.
+ * Youngness Webinar — backend entry point. Fail-fast startup order:
+ *
+ *   1. Validate env (missing vars AND leftover template placeholders).
+ *      In production a half-configured payment system must not serve traffic.
+ *   2. Connect MongoDB — Express, workers, queues and seeds all wait for it.
+ *      If the DB is unreachable the process EXITS (no silent "buffering" mode);
+ *      the host (Render/Docker) restarts it until the DB is reachable.
+ *   3. Bootstrap accounts (admin + Razorpay demo) — create-if-missing only.
+ *   4. Start background workers.
+ *   5. Listen.
+ *
+ * The Razorpay Key Secret and JWT secret stay on the server; only the public
+ * Razorpay Key ID ever reaches the browser.
  */
 const app = require("./app");
 const config = require("./config");
 const { connectDB } = require("./db/connect");
 
 async function start() {
-  try {
-    await connectDB();
-    // Razorpay verification/demo login (idempotent — creates only if missing,
-    // repairs password/role drift). See scripts/seedRazorpayDemo.js.
-    try {
-      const { ensureRazorpayDemoUser } = require("./scripts/seedRazorpayDemo");
-      const { user, isNew } = await ensureRazorpayDemoUser();
-      console.log(`✓ Razorpay demo account ${isNew ? "created" : "verified"}: ${user.email}`);
-    } catch (e) {
-      console.error("⚠  Razorpay demo account seed failed:", e.message);
+  // 1) Environment. Production refuses to boot half-configured.
+  const problems = config.envProblems();
+  if (problems.length) {
+    console.error("✗ Environment is not production-ready:");
+    for (const p of problems) console.error(`   - ${p}`);
+    if (config.isProd) {
+      console.error("Refusing to start. Set the variables above on the host (Render → Environment) and redeploy.");
+      process.exit(1);
     }
-  } catch (err) {
-    // Don't crash the payment flow if the DB is briefly unreachable — log loudly.
-    // Content endpoints will error until Mongo recovers; payments still work.
-    console.error("⚠  MongoDB connection failed at boot:", err.message);
+    console.warn("⚠  Continuing anyway because NODE_ENV=development — production would exit here.");
   }
 
-  // Background worker: drain the communication queue on an interval.
-  try { require("./services/commQueue").startWorker(parseInt(process.env.COMM_WORKER_MS || "15000", 10)); }
-  catch (e) { console.error("⚠  comm worker not started:", e.message); }
+  // 2) MongoDB must be connected before ANYTHING else runs.
+  try {
+    await connectDB();
+  } catch (err) {
+    console.error("✗ MongoDB connection failed — refusing to start:", err.message);
+    console.error("   Check MONGODB_URI and the Atlas network access list (Render needs 0.0.0.0/0).");
+    process.exit(1);
+  }
 
-  // Automatic config backups (opt-in via BACKUP_INTERVAL_HOURS).
-  try { require("./services/scheduledBackup").start(process.env.BACKUP_INTERVAL_HOURS); }
-  catch (e) { console.error("⚠  scheduled backups not started:", e.message); }
+  // 3) Bootstrap accounts (idempotent — create only if missing, never duplicate).
+  try {
+    const { ensureAdminUser } = require("./scripts/seedAdmin");
+    const admin = await ensureAdminUser();
+    if (admin) console.log(`✓ Admin account ${admin.isNew ? "created" : "present"}: ${admin.user.email}`);
+    else console.warn("⚠  ADMIN_EMAIL / ADMIN_PASSWORD not set — skipping admin bootstrap (run `npm run seed:admin` manually).");
+  } catch (e) {
+    console.error("⚠  Admin bootstrap failed:", e.message);
+  }
+  try {
+    const { ensureRazorpayDemoUser } = require("./scripts/seedRazorpayDemo");
+    const { user, isNew } = await ensureRazorpayDemoUser();
+    console.log(`✓ Razorpay demo account ${isNew ? "created" : "verified"}: ${user.email}`);
+  } catch (e) {
+    console.error("⚠  Razorpay demo account seed failed:", e.message);
+  }
 
+  // 4) Background workers — only now that the DB is ready.
+  require("./services/commQueue").startWorker(parseInt(process.env.COMM_WORKER_MS || "15000", 10));
+  require("./services/scheduledBackup").start(process.env.BACKUP_INTERVAL_HOURS);
+
+  // 5) Serve.
   app.listen(config.port, () => {
     console.log(`Youngness backend listening on :${config.port} (${config.env})`);
-    if (!config.isConfigured()) {
-      console.warn("⚠  Backend started but env is incomplete — some features will fail until configured.");
-    }
   });
 }
 
-start();
+start().catch((err) => {
+  console.error("✗ Fatal startup error:", err.message);
+  process.exit(1);
+});

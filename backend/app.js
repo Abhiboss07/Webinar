@@ -54,8 +54,44 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-// Health + readiness (Render uses these).
-app.get("/health", (req, res) => res.json({ status: "ok", env: config.env, configured: config.isConfigured() }));
+// Health + readiness (Render uses these). /health reports per-dependency
+// status — booleans only, never key values. Razorpay/Cloudinary/SMTP/Sheets
+// come from the settings provider (admin-panel values → env fallback), so it
+// reflects what the app will actually use at runtime.
+app.get("/health", async (req, res) => {
+  const { mongoose } = require("./db/connect");
+  const states = ["disconnected", "connected", "connecting", "disconnecting"];
+  const mongo = { connected: mongoose.connection.readyState === 1, state: states[mongoose.connection.readyState] || "unknown" };
+
+  const looksReal = (v) => !!v && !/ADD_LATER|change_me|your_key|your_api|your_cloud_name|your_deployment_id|your_shared_token/i.test(String(v));
+  let razorpay = { configured: false, mode: "" };
+  let cloudinary = { configured: false };
+  let smtp = { configured: false };
+  let sheets = { configured: false };
+  try {
+    const provider = require("./services/settingsProvider");
+    const r = await provider.razorpay();
+    razorpay = { configured: looksReal(r.keyId) && looksReal(r.keySecret) && /^rzp_(test|live)_/.test(r.keyId), mode: r.mode || "" };
+    const c = await provider.cloudinary();
+    cloudinary = { configured: looksReal(c.cloudName) && looksReal(c.apiKey) && looksReal(c.apiSecret) };
+    const m = await provider.smtp();
+    smtp = { configured: looksReal(m.host) && looksReal(m.username) };
+    const g = await provider.sheets();
+    sheets = { configured: looksReal(g.endpoint) && looksReal(g.token) };
+  } catch (_) { /* settings unreadable (DB down) — defaults above already say so */ }
+
+  const envProblems = config.envProblems();
+  const env = { valid: envProblems.length === 0, problems: envProblems };
+  // Payment-critical checks gate the status; Cloudinary/SMTP are reported but
+  // optional (media falls back to local storage, email is admin-configured).
+  const healthy = mongo.connected && razorpay.configured && env.valid;
+  res.status(healthy ? 200 : 503).json({
+    status: healthy ? "ok" : "degraded",
+    env: config.env,
+    uptimeSec: Math.round(process.uptime()),
+    checks: { mongo, razorpay, cloudinary, smtp, sheets, env },
+  });
+});
 app.get("/health/ready", (req, res) => {
   const { mongoose } = require("./db/connect");
   const ready = mongoose.connection.readyState === 1;

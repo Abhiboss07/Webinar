@@ -21,8 +21,8 @@ const { connectDB, mongoose } = require("../db/connect");
 const User = require("../models/User");
 const { ensureRoles } = require("./seedRoles");
 
-const DEMO_EMAIL = (process.env.RAZORPAY_DEMO_EMAIL || "razorpay-demo@awishclinic.com").trim().toLowerCase();
-const DEMO_PASSWORD = process.env.RAZORPAY_DEMO_PASSWORD || "StrongPass@123";
+const DEMO_EMAIL = (process.env.RAZORPAY_DEMO_EMAIL || "razorpay-demo@youngness.com").trim().toLowerCase();
+const DEMO_PASSWORD = process.env.RAZORPAY_DEMO_PASSWORD || "Demo@12345";
 
 async function ensureRazorpayDemoUser() {
   await ensureRoles(); // "viewer" role must exist before assigning it
