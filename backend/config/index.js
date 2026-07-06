@@ -91,4 +91,22 @@ module.exports = {
   isConfigured() {
     return missing.length === 0;
   },
+  // Full env validation: missing vars AND template placeholders that were never
+  // replaced (the classic "deployed with .env.example values" failure). Used by
+  // server.js (fail-fast boot), scripts/validateEnv.js and GET /health.
+  envProblems() {
+    const problems = missing.map((k) => `${k} is not set`);
+    const PLACEHOLDER = /ADD_LATER|change_me|your_key|your_api|your_cloud_name|your_deployment_id|your_shared_token|your_render|your-frontend|user:pass@cluster0\.xxxxx/i;
+    for (const k of ["MONGODB_URI", "JWT_SECRET", "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET", "GOOGLE_SHEET_ENDPOINT", "SHEET_SHARED_TOKEN"]) {
+      const v = process.env[k];
+      if (v && PLACEHOLDER.test(v)) problems.push(`${k} still has a template placeholder value`);
+    }
+    const keyId = process.env.RAZORPAY_KEY_ID || "";
+    if (keyId && !PLACEHOLDER.test(keyId) && !/^rzp_(test|live)_/.test(keyId)) {
+      problems.push("RAZORPAY_KEY_ID must start with rzp_test_ or rzp_live_");
+    }
+    const jwt = process.env.JWT_SECRET || "";
+    if (jwt && jwt.length < 16) problems.push("JWT_SECRET is too short (use `openssl rand -hex 32`)");
+    return problems;
+  },
 };

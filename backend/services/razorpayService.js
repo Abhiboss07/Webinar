@@ -30,6 +30,12 @@ async function createOrder({ receipt, notes }) {
 async function verifySignature({ orderId, paymentId, signature }) {
   if (!orderId || !paymentId || !signature) return false;
   const { keySecret } = await provider.razorpay();
+  // Never trust the secret's shape: a corrupted settings value must fail the
+  // verification, not crash the process inside createHmac.
+  if (!keySecret || typeof keySecret !== "string") {
+    console.error("[razorpay] key secret is missing or not a string — rejecting verification");
+    return false;
+  }
   const expected = crypto.createHmac("sha256", keySecret).update(`${orderId}|${paymentId}`).digest("hex");
   const a = Buffer.from(expected, "utf8");
   const b = Buffer.from(String(signature), "utf8");
