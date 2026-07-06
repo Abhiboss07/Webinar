@@ -42,13 +42,24 @@ function setPath(obj, path, value) {
   let o = obj; for (const k of parts) { if (o[k] == null || typeof o[k] !== "object") o[k] = {}; o = o[k]; }
   o[last] = value;
 }
-// Deep-merge source into a clone of base (objects only; arrays/scalars replace).
+// Deep-merge source into a DEEP clone of base (objects only; arrays/scalars
+// replace). The clone must be deep: callers (settingsProvider.effective/
+// maskedView) setPath() into the result, and a shallow copy would alias
+// untouched subtrees back to the shared DEFAULTS constant — mutating it
+// process-wide (real incident: GET /api/settings wrote masked {set,masked}
+// objects into DEFAULTS.payment.test.keySecret and the next /verify-payment
+// crashed the server with ERR_INVALID_ARG_TYPE).
+function deepClone(v) {
+  if (Array.isArray(v)) return v.map(deepClone);
+  if (v && typeof v === "object") { const o = {}; for (const k of Object.keys(v)) o[k] = deepClone(v[k]); return o; }
+  return v;
+}
 function deepMerge(base, src) {
-  const out = Array.isArray(base) ? [...base] : { ...base };
+  const out = deepClone(base);
   if (!src || typeof src !== "object") return out;
   for (const k of Object.keys(src)) {
     if (src[k] && typeof src[k] === "object" && !Array.isArray(src[k]) && out[k] && typeof out[k] === "object") out[k] = deepMerge(out[k], src[k]);
-    else out[k] = src[k];
+    else out[k] = deepClone(src[k]);
   }
   return out;
 }

@@ -18,6 +18,17 @@ const app = require("./app");
 const config = require("./config");
 const { connectDB } = require("./db/connect");
 
+// Last-resort safety net: log WHAT killed the process before the host
+// restarts it (otherwise Render logs end in a bare stack trace).
+process.on("uncaughtException", (err) => {
+  console.error("✗ FATAL uncaughtException:", err && err.stack ? err.stack : err);
+  process.exit(1);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("✗ FATAL unhandledRejection:", reason && reason.stack ? reason.stack : reason);
+  process.exit(1);
+});
+
 async function start() {
   // 1) Environment. Production refuses to boot half-configured.
   const problems = config.envProblems();

@@ -11,6 +11,16 @@ const Registration = require("../models/Registration");
 const { clean } = require("../utils/helpers");
 
 async function verifyPayment(req, res) {
+  try {
+    return await verifyPaymentInner(req, res);
+  } catch (err) {
+    // A malformed/forged request must never take the process down.
+    console.error("[verify-payment] error:", err.message);
+    return res.status(500).json({ status: "error", message: "Payment verification failed. If you were charged, contact support with your payment ID." });
+  }
+}
+
+async function verifyPaymentInner(req, res) {
   const b = req.body || {};
   const regId = clean(b.regId);
   const orderId = clean(b.razorpay_order_id);
