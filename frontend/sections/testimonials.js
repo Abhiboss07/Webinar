@@ -2,12 +2,19 @@ import { PLAY, pillTerra, ctaBlock } from "./_shared.js";
 
 export function Testimonials(c) {
   const t = c.testimonials;
-  const videos = t.videos.map((v) =>
-    `<div class="group relative aspect-video cursor-pointer overflow-hidden rounded-lg bg-navy-deep shadow-card">
-        <img src="${v.thumb}" alt="Video testimonial — ${v.name}" class="h-full w-full object-cover opacity-70 transition group-hover:scale-105 group-hover:opacity-90" loading="lazy" />
-        <span class="absolute inset-0 flex items-center justify-center"><span class="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-terra shadow-lg transition group-hover:scale-110">${PLAY}</span></span>
+  // Cards are an image gallery by default; the play overlay renders ONLY when
+  // an item is actually a video (has a video/url field or type === "video").
+  const videos = t.videos.map((v) => {
+    const isVideo = !!(v.video || v.url || v.type === "video");
+    const overlay = isVideo
+      ? `<span class="absolute inset-0 flex items-center justify-center"><span class="flex h-16 w-16 items-center justify-center rounded-full bg-white/90 text-terra shadow-lg transition group-hover:scale-110">${PLAY}</span></span>`
+      : "";
+    return `<div class="group relative aspect-video ${isVideo ? "cursor-pointer " : ""}overflow-hidden rounded-lg bg-navy-deep shadow-card">
+        <img src="${v.thumb}" alt="${isVideo ? "Video testimonial" : "Testimonial"} — ${v.name}" class="h-full w-full object-cover opacity-70 transition group-hover:scale-105 group-hover:opacity-90" loading="lazy" />
+        ${overlay}
         <span class="absolute bottom-3 left-4 text-sm font-bold text-white drop-shadow">${v.name}</span>
-      </div>`).join("");
+      </div>`;
+  }).join("");
   const reviews = t.reviews.map((r) =>
     `<article class="reveal w-[85%] shrink-0 snap-center rounded-lg border border-edge bg-white p-6 shadow-sm md:w-auto">
         <div class="mb-3 text-gold">★★★★★</div>

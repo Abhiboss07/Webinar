@@ -5,8 +5,8 @@
    ========================================================================== */
 import { C } from "./config.js";
 
-// TEMP DEBUG — logs are emitted only when config.integrations.debug === true.
-// Set integrations.debug back to false once the flow is verified.
+// Diagnostics are emitted only when config integrations.debug === true
+// (defaults to false — production stays silent).
 const dbg = (...a) => { if (C.integrations && C.integrations.debug) console.log("[api]", ...a); };
 
 // Resolve the backend base URL for the current environment.

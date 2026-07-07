@@ -7,8 +7,15 @@ function notFound(req, res) {
 
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
-  // CORS rejections surface here as errors — answer with 403, everything else 500.
+  // Client errors keep their own status: CORS rejections → 403; body-parser
+  // failures (malformed JSON, oversized payload) carry a 4xx on err.status and
+  // must not be reported as server errors.
   const isCors = err && /Not allowed by CORS/i.test(err.message || "");
+  const clientCode = Number((err && (err.status || err.statusCode)) || 0);
+  const isClient = clientCode >= 400 && clientCode < 500;
+  if (isClient && !isCors) {
+    return res.status(clientCode).json({ status: "error", message: clientCode === 400 ? "Invalid request body" : "Request rejected" });
+  }
   const code = isCors ? 403 : 500;
   console.error("[error]", err && err.message);
   if (!isCors) {
