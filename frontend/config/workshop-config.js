@@ -168,7 +168,8 @@ const WORKSHOP_CONFIG = {
     label: "Success Stories",
     heading: "What Our Healthcare Professionals Say",
     cta: "Register Now @ Just {{price}}",
-    // 2×2 video grid. `thumb` = image path; replace with real testimonial thumbnails.
+    // 2×2 image gallery. `thumb` = image path. Add `video: "<url>"` (or
+    // `type: "video"`) to an item to show a play button on that card.
     videos: [
       { name: "Priya · Staff Nurse",      thumb: "assets/IMG_4641.jpg" },
       { name: "Rahul · Physiotherapist",  thumb: "assets/IMG_5272.jpg" },
