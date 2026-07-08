@@ -20,7 +20,7 @@ jobs:
         env:
           MONGODB_URI: mongodb://localhost:27017/ci
           JWT_SECRET: ci_secret_at_least_16_chars_long
-          RAZORPAY_KEY_ID: ci
+          RAZORPAY_KEY_ID: rzp_test_ci_dummy_key
           RAZORPAY_KEY_SECRET: ci
           GOOGLE_SHEET_ENDPOINT: http://localhost
         run: npm run validate:env
@@ -29,7 +29,7 @@ jobs:
         env:
           MONGODB_URI: mongodb://localhost:27017/ci
           JWT_SECRET: ci_secret_at_least_16_chars_long
-          RAZORPAY_KEY_ID: ci
+          RAZORPAY_KEY_ID: rzp_test_ci_dummy_key
           RAZORPAY_KEY_SECRET: ci
           GOOGLE_SHEET_ENDPOINT: http://localhost
         run: node -e "require('./app'); console.log('backend OK')"
