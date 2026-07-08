@@ -88,7 +88,16 @@ async function testConnection(req, res) {
     }
     return res.status(400).json({ status: "error", message: "Unknown target" });
   } catch (err) {
-    return res.json({ ok: false, message: (err && (err.error?.description || err.message)) || "Connection failed" });
+    // Surface the provider's REAL error. Razorpay throws {error:{description}},
+    // the Cloudinary SDK rejects with a plain {error:{message,http_code}} object
+    // (no top-level .message), network failures carry .code — the old fallback
+    // collapsed all of these into a useless "Connection failed".
+    console.error(`[settings/test] ${target} failed:`, err);
+    const e = err || {};
+    const detail = (e.error && (e.error.description || e.error.message))
+      || e.message || e.code || (typeof e === "string" ? e : "");
+    const http = (e.error && e.error.http_code) || e.http_code || e.statusCode || null;
+    return res.json({ ok: false, message: (http ? `HTTP ${http}: ` : "") + (detail || "Connection failed") });
   }
 }
 
