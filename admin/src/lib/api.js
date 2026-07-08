@@ -29,8 +29,29 @@ async function raw(path, { method = "GET", body, auth = true } = {}) {
 async function request(path, opts = {}) {
   const auth = opts.auth !== false;
   let res;
-  try { res = await raw(path, opts); }
-  catch (_) { throw new Error("Cannot reach the server. Check your connection and the API URL."); }
+  let retries = 3;
+  let delay = 1500;
+
+  while (retries >= 0) {
+    try {
+      res = await raw(path, opts);
+      // Retry on gateway / load balancer errors during cold boots
+      if (res.status === 502 || res.status === 503 || res.status === 504) {
+        throw new Error(`Gateway error (${res.status})`);
+      }
+      break;
+    } catch (err) {
+      if (retries === 0) {
+        if (res && (res.status === 502 || res.status === 503 || res.status === 504)) {
+          break; // Fall through to standard error response parser
+        }
+        throw new Error("Cannot reach the server. Check your connection and the API URL.");
+      }
+      retries--;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      delay *= 2; // Exponential backoff
+    }
+  }
 
   // Transparent refresh on 401 (not for the auth endpoints themselves).
   if (res.status === 401 && auth && !/\/auth\/(login|refresh)/.test(path)) {
