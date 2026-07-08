@@ -52,6 +52,7 @@ async function publicView() {
     social: Object.fromEntries(Object.entries(s.social).filter(([, v]) => v && v.enabled).map(([k, v]) => [k, v.url])),
     analytics: { ga: s.google.analyticsId, gtm: s.google.tagManagerId },
     maintenance: s.security.maintenance,
+    buttons: (s.branding && s.branding.buttons) || null, // public-site button theme
   };
 }
 

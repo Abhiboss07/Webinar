@@ -30,17 +30,42 @@
   background: linear-gradient(90deg, #9a7d26, #b8952f, #c45c3e);
 }
 
-/* Primary call-to-action button */
+/* Button theme — every value is a CSS variable so the admin (Settings →
+   Branding) can restyle every button without code. Defaults reproduce the
+   original look exactly; js/app.js overrides them from the CMS theme. */
+:root {
+  --btn-bg: linear-gradient(165deg, #d66f4f 0%, #c45c3e 45%, #a34a31 100%);
+  --btn-bg-hover: linear-gradient(165deg, #e07d5c 0%, #a34a31 100%);
+  --btn-text: #ffffff;
+  --btn-text-hover: #ffffff;
+  --btn-radius: 0.75rem;               /* matches the rounded-xl utility */
+  --btn-shadow: 0 8px 24px rgba(196, 92, 62, 0.35);
+  --btn-shadow-hover: 0 12px 32px rgba(196, 92, 62, 0.42);
+  --btn-border: transparent;
+  --btn-border-hover: transparent;
+  --btn2-bg: #ffffff;                  /* secondary (payment-method tiles) */
+  --btn2-text: #1e3d52;
+}
+
+/* Primary call-to-action button (hero, header, sticky bar, modal, CTAs) */
 .btn-cta {
-  background: linear-gradient(165deg, #d66f4f 0%, #c45c3e 45%, #a34a31 100%);
-  box-shadow: 0 8px 24px rgba(196, 92, 62, 0.35);
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  border-radius: var(--btn-radius);
+  border: 1px solid var(--btn-border);
+  box-shadow: var(--btn-shadow);
   transition: transform .25s var(--ease), box-shadow .25s var(--ease), background .25s var(--ease);
 }
 .btn-cta:hover {
-  transform: translateY(-2px); box-shadow: 0 12px 32px rgba(196, 92, 62, 0.42);
-  background: linear-gradient(165deg, #e07d5c 0%, #a34a31 100%);
+  transform: translateY(-2px); box-shadow: var(--btn-shadow-hover);
+  background: var(--btn-bg-hover);
+  color: var(--btn-text-hover);
+  border-color: var(--btn-border-hover);
 }
 .btn-cta:active { transform: translateY(0); }
+
+/* Secondary buttons (payment-method tiles in the registration modal) */
+.pay-method { background: var(--btn2-bg); color: var(--btn2-text); }
 
 /* Scroll reveal */
 .reveal { opacity: 0; transform: translateY(22px); transition: opacity .6s var(--ease), transform .6s var(--ease); }

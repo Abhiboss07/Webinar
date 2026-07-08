@@ -67,7 +67,12 @@ async function getPublic(req, res) {
     const data = compose(base, workshop);
 
     let maintenance = null;
-    try { maintenance = (await provider.security()).maintenance; } catch (_) { /* optional */ }
+    let theme = null;
+    try {
+      const pv = await provider.publicView();
+      maintenance = pv.maintenance;
+      if (pv.buttons) theme = { buttons: pv.buttons };
+    } catch (_) { /* optional */ }
 
     res.set("Cache-Control", preview ? "no-store" : "public, max-age=30, stale-while-revalidate=120");
     return res.json({
@@ -75,6 +80,7 @@ async function getPublic(req, res) {
       data,
       preview,
       maintenance,
+      theme,
       activeWorkshop: workshop ? { slug: workshop.slug, title: workshop.title, status: workshop.status } : null,
       updatedAt: doc.publishedAt || doc.updatedAt,
     });

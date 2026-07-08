@@ -41,7 +41,21 @@ const CFG = {
     ["security.twoFactor", "2FA enabled", "toggle", null, true], ["security.maintenance.enabled", "Maintenance mode", "toggle", null, true], ["security.maintenance.message", "Maintenance message", "text"] ] },
   branding: { label: "Branding", fields: [
     ["branding.loaderLogo", "Loader logo", "media"], ["branding.emailLogo", "Email logo", "media"], ["branding.invoiceLogo", "Invoice logo", "media"],
-    ["branding.certificateLogo", "Certificate logo", "media"], ["branding.adminLogo", "Admin logo", "media"] ] },
+    ["branding.certificateLogo", "Certificate logo", "media"], ["branding.adminLogo", "Admin logo", "media"],
+    // Public-site button theme — applied live by the website after Save.
+    ["branding.buttons.gradient", "Buttons use gradient", "toggle", null, true],
+    ["branding.buttons.gradientFrom", "Gradient start", "color", null, true],
+    ["branding.buttons.gradientTo", "Gradient end", "color", null, true],
+    ["branding.buttons.primaryBg", "Primary background (when gradient off)", "color", null, true],
+    ["branding.buttons.primaryText", "Primary text", "color", null, true],
+    ["branding.buttons.primaryHoverBg", "Primary hover background", "color", null, true],
+    ["branding.buttons.primaryHoverText", "Primary hover text", "color", null, true],
+    ["branding.buttons.secondaryBg", "Secondary background", "color", null, true],
+    ["branding.buttons.secondaryText", "Secondary text", "color", null, true],
+    ["branding.buttons.borderColor", "Button border (blank = none)", "text", null, true],
+    ["branding.buttons.borderHoverColor", "Border on hover (blank = none)", "text", null, true],
+    ["branding.buttons.radius", "Button corner radius", "text", null, true],
+    ["branding.buttons.shadow", "Button shadow (CSS)", "text", null, true] ] },
   communication: { label: "Communication", fields: [
     ["communication.emailProvider", "Email provider", "select", ["smtp", "mock"], true], ["communication.replyTo", "Reply-to", "text", null, true],
     ["communication.adminNotify", "Admin notify (emails)", "text"], ["communication.whatsapp.provider", "WhatsApp provider", "select", ["mock", "meta", "twilio"], true],

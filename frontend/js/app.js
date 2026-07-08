@@ -3,7 +3,7 @@
    interactions, and orchestrates the registration → payment → success flow.
    Section markup lives in /sections; content lives in config/workshop-config.js.
    ========================================================================== */
-import { C, $, loadConfig, maintenance } from "./config.js";
+import { C, $, loadConfig, maintenance, theme } from "./config.js";
 import { Components as T } from "../sections/index.js";
 import { initPopup } from "./popup.js";
 import { initForm } from "./form.js";
@@ -27,6 +27,27 @@ function applySeo() {
   set('meta[name="twitter:description"]', "content", s.description);
   set('meta[name="twitter:image"]', "content", s.ogImage);
   const fav = document.querySelector('link[rel="icon"]'); if (fav && C.brand.favicon) fav.href = C.brand.favicon;
+}
+
+/* ---------- 1b. Button theme from admin Settings → Branding ----------
+   Maps the CMS theme onto the CSS variables components.css defines. Only
+   non-empty values are applied, so a missing/partial theme keeps defaults. */
+function applyButtonTheme(t) {
+  if (!t || !t.buttons) return;
+  const b = t.buttons;
+  const set = (k, v) => { if (v) document.documentElement.style.setProperty(k, v); };
+  const bg = b.gradient !== false && b.gradientFrom && b.gradientTo
+    ? `linear-gradient(165deg, ${b.gradientFrom}, ${b.gradientTo})` : b.primaryBg;
+  set("--btn-bg", bg);
+  set("--btn-bg-hover", b.primaryHoverBg);
+  set("--btn-text", b.primaryText);
+  set("--btn-text-hover", b.primaryHoverText);
+  set("--btn-radius", b.radius);
+  set("--btn-shadow", b.shadow);
+  set("--btn-border", b.borderColor);
+  set("--btn-border-hover", b.borderHoverColor);
+  set("--btn2-bg", b.secondaryBg);
+  set("--btn2-text", b.secondaryText);
 }
 
 /* ---------- 2. Render all sections ----------
@@ -263,6 +284,7 @@ async function boot() {
     return;
   }
   applySeo();
+  applyButtonTheme(theme);
   render();
   initReveal();
   initFaq();

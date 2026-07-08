@@ -51,6 +51,7 @@ const clone = (o) => (typeof structuredClone === "function" ? structuredClone(o)
    initial fetch. loadConfig() replaces it with the CMS content on success. */
 export let C = interpolate(clone(FALLBACK_CONFIG));
 export let maintenance = null; // { enabled, message } from the CMS, if set
+export let theme = null;       // { buttons: {...} } from admin Settings → Branding
 export const $ = (id) => document.getElementById(id);
 
 /* Fetch live content from the CMS. On any failure, keeps the bundled fallback so
@@ -74,6 +75,7 @@ export async function loadConfig() {
     if (!res.ok) throw new Error("HTTP " + res.status);
     const json = await res.json();
     if (json && json.maintenance) maintenance = json.maintenance;
+    if (json && json.theme) theme = json.theme;
     const data = json && json.data ? json.data : json;
     if (data && typeof data === "object" && data.workshop) {
       C = interpolate(data);

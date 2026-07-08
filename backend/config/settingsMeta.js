@@ -13,7 +13,19 @@ const DEFAULTS = {
   google: { sheets: { spreadsheetId: "", appsScriptUrl: "", sharedToken: "" }, analyticsId: "", tagManagerId: "" },
   seo: { defaultTitle: "", metaDescription: "", keywords: "", ogImage: "", robots: "index, follow", canonicalUrl: "", googleVerification: "", schema: "" },
   security: { sessionTimeout: "12h", passwordMinLength: 8, maxLoginAttempts: 5, lockMinutes: 15, twoFactor: false, maintenance: { enabled: false, message: "We'll be back shortly." } },
-  branding: { loaderLogo: "", emailLogo: "", invoiceLogo: "", certificateLogo: "", adminLogo: "" },
+  branding: {
+    loaderLogo: "", emailLogo: "", invoiceLogo: "", certificateLogo: "", adminLogo: "",
+    // Public-site button theme (defaults = the site's original look). The
+    // frontend applies these as CSS variables; empty string = keep CSS default.
+    buttons: {
+      gradient: true, gradientFrom: "#d66f4f", gradientTo: "#a34a31",
+      primaryBg: "#c45c3e", primaryText: "#ffffff",
+      primaryHoverBg: "#a34a31", primaryHoverText: "#ffffff",
+      secondaryBg: "#ffffff", secondaryText: "#1e3d52",
+      borderColor: "", borderHoverColor: "",
+      radius: "12px", shadow: "0 8px 24px rgba(196, 92, 62, 0.35)",
+    },
+  },
   communication: {
     emailProvider: "smtp",            // smtp | mock (mock = simulate, for testing/dev)
     replyTo: "", adminNotify: "",     // comma-separated admin notification recipients
