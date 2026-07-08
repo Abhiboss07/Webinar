@@ -37,6 +37,25 @@ function isPlainObject(v) {
   return v && typeof v === "object" && !Array.isArray(v);
 }
 
+/**
+ * Merge `overlay` onto `base`: plain objects merge recursively; arrays and
+ * scalars replace. The Workshop editor writes PARTIAL nested objects (e.g.
+ * hero = {title} only) — replacing a complete base object with such a partial
+ * drops fields the public renderers require (hero.facts etc.), which blanked
+ * the site below the navbar. Merging keeps every field the overlay doesn't
+ * explicitly define.
+ */
+function deepMerge(base, overlay) {
+  if (!isPlainObject(base) || !isPlainObject(overlay)) {
+    return overlay === undefined ? base : overlay;
+  }
+  const out = { ...base };
+  for (const [k, v] of Object.entries(overlay)) {
+    out[k] = isPlainObject(v) && isPlainObject(base[k]) ? deepMerge(base[k], v) : v;
+  }
+  return out;
+}
+
 /** The workshop the public site is currently serving (active + effectively live). */
 async function findActiveWorkshop() {
   const now = new Date();
@@ -87,7 +106,12 @@ async function pushWorkshopToBase(workshop) {
   const apply = (target) => {
     if (!isPlainObject(target)) return target;
     for (const k of WORKSHOP_KEYS) {
-      if (workshop.content[k] !== undefined) { target[k] = workshop.content[k]; changed = true; }
+      if (workshop.content[k] !== undefined) {
+        // Merge, don't replace: partial workshop objects must never gut the
+        // complete base objects the Content Editor and public site rely on.
+        target[k] = deepMerge(target[k], workshop.content[k]);
+        changed = true;
+      }
     }
     return target;
   };
@@ -103,4 +127,4 @@ async function pushWorkshopToBase(workshop) {
   return doc;
 }
 
-module.exports = { WORKSHOP_KEYS, findActiveWorkshop, pushBaseToActiveWorkshop, pushWorkshopToBase };
+module.exports = { WORKSHOP_KEYS, deepMerge, findActiveWorkshop, pushBaseToActiveWorkshop, pushWorkshopToBase };
