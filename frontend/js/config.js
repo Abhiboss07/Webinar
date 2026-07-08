@@ -65,7 +65,12 @@ export async function loadConfig() {
     if (params.get("preview") === "1") qs.set("preview", "1");
     if (params.get("workshop")) qs.set("workshop", params.get("workshop"));
     const url = base + "/api/site-config" + (qs.toString() ? "?" + qs.toString() : "");
-    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    // Timeout: a hibernating backend (free-tier cold start) can hold this fetch
+    // for 40s+ — without a deadline the page stays blank the whole time. After
+    // 8s we fall back to the bundled config (the designed failure path) so the
+    // site always renders.
+    const signal = typeof AbortSignal !== "undefined" && AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined;
+    const res = await fetch(url, { headers: { Accept: "application/json" }, signal });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const json = await res.json();
     if (json && json.maintenance) maintenance = json.maintenance;

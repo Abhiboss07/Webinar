@@ -47,6 +47,26 @@ function adapter() {
   return local;
 }
 
+/**
+ * Async, authoritative adapter resolution for actual storage operations.
+ * The sync peek above depends on whether some earlier request happened to warm
+ * the settings cache — invalidate() (fired on every settings save) nulls it,
+ * so an upload right after configuring Cloudinary silently landed on local
+ * disk. Uploads are rare; awaiting effective() (itself 10s-cached) makes the
+ * choice deterministic. STORAGE_PROVIDER env still wins as documented.
+ */
+async function resolveAdapter() {
+  if (config.storage.provider === "cloudinary") return cloudinary;
+  if (config.storage.provider === "local" && !process.env.STORAGE_PROVIDER) {
+    try {
+      const s = await getSettingsProvider().effective();
+      const cn = (s.media && s.media.cloudinary && s.media.cloudinary.cloudName) || "";
+      if (cn) return cloudinary;
+    } catch (_) { /* settings unreadable — fall through to local */ }
+  }
+  return local;
+}
+
 /** Map a mime type to a Cloudinary-style resource type. */
 function resourceTypeFor(mimetype) {
   if (/^image\//.test(mimetype)) return "image";
@@ -57,6 +77,6 @@ function resourceTypeFor(mimetype) {
 module.exports = {
   provider: () => adapter().kind,
   resourceTypeFor,
-  upload: (buffer, opts) => adapter().upload(buffer, opts),
-  destroy: (publicId, resourceType) => adapter().destroy(publicId, resourceType),
+  upload: async (buffer, opts) => (await resolveAdapter()).upload(buffer, opts),
+  destroy: async (publicId, resourceType) => (await resolveAdapter()).destroy(publicId, resourceType),
 };
