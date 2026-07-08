@@ -113,6 +113,12 @@ async function pushWorkshopToBase(workshop) {
         changed = true;
       }
     }
+    // Ensure the Workshop model's title propagates as data.workshop.name
+    // so the dashboard and other consumers always show the current name.
+    if (workshop.title && isPlainObject(target.workshop)) {
+      target.workshop.name = workshop.title;
+      changed = true;
+    }
     return target;
   };
 
