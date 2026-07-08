@@ -1,0 +1,23 @@
+name: Keep Render awake
+# Render's free tier spins the instance down after ~15 min without traffic;
+# the next request then hangs ~40s while it cold-boots and often dies with a
+# connection reset — surfacing in the admin as "Cannot reach the server" and
+# failed autosaves. Pinging /health every 10 minutes keeps it warm 24/7.
+# (GitHub cron can lag a few minutes under load; that's fine — an occasional
+# cold start is tolerable, constant ones are not. The proper fix is a paid
+# Render instance; delete this file when the service is upgraded.)
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping backend health endpoint
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 90 https://webinar-jbgr.onrender.com/health)
+          echo "health returned $code"
+          test "$code" = "200"
