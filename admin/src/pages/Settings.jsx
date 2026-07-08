@@ -72,7 +72,18 @@ function SectionForm({ sectionKey, settings, onSaved }) {
     try { const r = await api.settingsUpdate(sectionKey, get(draft, sectionKey) || {}); toast("Saved", "success"); onSaved(r.settings); }
     catch (e) { toast(e.message, "error"); } finally { setBusy(false); }
   };
-  const runTest = async () => { setTestMsg("testing"); try { const r = await api.settingsTest(cfg.test); setTestMsg(r); } catch (e) { setTestMsg({ ok: false, message: e.message }); } };
+  const runTest = async () => {
+    setTestMsg("testing");
+    try {
+      // The test endpoint checks the PERSISTED settings — save the section
+      // first (idempotent when unchanged) so the button always tests exactly
+      // what the form shows, never a stale/unsaved database state.
+      const saved = await api.settingsUpdate(sectionKey, get(draft, sectionKey) || {});
+      onSaved(saved.settings);
+      const r = await api.settingsTest(cfg.test);
+      setTestMsg(r);
+    } catch (e) { setTestMsg({ ok: false, message: e.message }); }
+  };
   const sendEmail = async () => { try { const r = await api.settingsTestEmail(emailTo); toast(r.message, "success"); } catch (e) { toast(e.message, "error"); } };
 
   const field = ([path, label, type, options, half]) => {
