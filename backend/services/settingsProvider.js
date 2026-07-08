@@ -83,4 +83,9 @@ async function smtp() { return (await effective()).email.smtp; }
 async function security() { return (await effective()).security; }
 async function communication() { return (await effective()).communication; }
 
-module.exports = { effective, invalidate, maskedView, publicView, razorpay, cloudinary, sheets, smtp, security, communication };
+const exported = { effective, invalidate, maskedView, publicView, razorpay, cloudinary, sheets, smtp, security, communication };
+// Expose the in-memory cache (read-only) so the storage facade can
+// synchronously peek at it to decide cloudinary vs local adapter
+// without incurring an async DB read on every upload.
+Object.defineProperty(exported, "_cache", { get: () => cache });
+module.exports = exported;
