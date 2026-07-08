@@ -18,6 +18,7 @@ const SiteConfig = require("../models/SiteConfig");
 const Workshop = require("../models/Workshop");
 const audit = require("../services/audit");
 const provider = require("../services/settingsProvider");
+const workshopSync = require("../services/workshopSync");
 const { normalizeManifest } = require("../config/sections");
 
 function isPlainObject(v) {
@@ -55,7 +56,12 @@ async function getPublic(req, res) {
     const preview = String(req.query.preview || "") === "1";
     const base = normalizeManifest(preview ? (doc.draft || doc.data || {}) : (doc.data || {}));
 
-    const workshop = await resolveWorkshop(String(req.query.workshop || "").trim());
+    // Draft preview shows the draft AS IS (publish syncs it to the active
+    // workshop, so the draft IS what will go live) — overlaying the current
+    // workshop here would shadow exactly the edits being previewed. An explicit
+    // ?workshop=<slug> (Workshop editor preview) still overlays that workshop.
+    const slug = String(req.query.workshop || "").trim();
+    const workshop = preview && !slug ? null : await resolveWorkshop(slug);
     const data = compose(base, workshop);
 
     let maintenance = null;
@@ -146,8 +152,17 @@ async function publish(req, res) {
     doc.updatedBy = req.user ? req.user.id : null;
     doc.markModified("data"); doc.markModified("draft"); doc.markModified("history");
     await doc.save();
-    await audit.record(req, "content.publish", { resource: "homepage_cms", newValue: { version: doc.version } });
-    return res.json({ status: "success", version: doc.version, publishedAt: doc.publishedAt });
+    // Mirror the newly published workshop-owned keys into the active workshop,
+    // otherwise its content overlay keeps serving the pre-publish values.
+    let syncedWorkshop = null;
+    try {
+      const w = await workshopSync.pushBaseToActiveWorkshop(doc.data);
+      if (w) syncedWorkshop = { slug: w.slug, title: w.title };
+    } catch (syncErr) {
+      console.error("[site-config/publish] workshop sync failed:", syncErr.message);
+    }
+    await audit.record(req, "content.publish", { resource: "homepage_cms", newValue: { version: doc.version, syncedWorkshop } });
+    return res.json({ status: "success", version: doc.version, publishedAt: doc.publishedAt, syncedWorkshop });
   } catch (err) {
     console.error("[site-config/publish] error:", err.message);
     return res.status(500).json({ status: "error", message: "Could not publish" });
@@ -202,6 +217,9 @@ async function revert(req, res) {
     doc.updatedBy = req.user ? req.user.id : null;
     doc.markModified("data"); doc.markModified("draft"); doc.markModified("history");
     await doc.save();
+    // A revert re-publishes old content — keep the active workshop in step.
+    try { await workshopSync.pushBaseToActiveWorkshop(doc.data); }
+    catch (syncErr) { console.error("[site-config/revert] workshop sync failed:", syncErr.message); }
     return res.json({ status: "success", version: doc.version, restoredFrom: version });
   } catch (err) {
     console.error("[site-config/revert] error:", err.message);

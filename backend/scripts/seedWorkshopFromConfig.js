@@ -9,14 +9,8 @@
 const { connectDB, mongoose } = require("../db/connect");
 const SiteConfig = require("../models/SiteConfig");
 const Workshop = require("../models/Workshop");
+const { WORKSHOP_KEYS } = require("../services/workshopSync");
 const { slugify } = require("../utils/helpers");
-
-// Top-level content keys a workshop OWNS (overlaid on the SiteConfig base).
-const WORKSHOP_KEYS = [
-  "workshop", "hero", "seo", "registration", "modules", "faq", "testimonials",
-  "trainer", "bonus", "guarantee", "choice", "problem", "whyDifferent",
-  "audience", "finalCta",
-];
 
 async function main() {
   const force = process.argv.includes("--force");

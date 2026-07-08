@@ -34,6 +34,7 @@ export default function WorkshopEdit() {
   const nav = useNavigate();
   const toast = useToast();
   const [w, setW] = useState(null);
+  const [loadErr, setLoadErr] = useState("");
   const [tab, setTab] = useState("General");
   const [status, setStatus] = useState("saved");
   const [jsonText, setJsonText] = useState("");
@@ -42,8 +43,11 @@ export default function WorkshopEdit() {
   const timer = useRef(null);
 
   useEffect(() => {
-    api.workshop(id).then((r) => { setW(r.workshop); latest.current = r.workshop; }).catch((e) => toast(e.message, "error"));
-  }, [id, toast]);
+    setLoadErr("");
+    api.workshop(id)
+      .then((r) => { setW(r.workshop); latest.current = r.workshop; })
+      .catch((e) => { setLoadErr(e.message || "Could not load this workshop"); });
+  }, [id]);
 
   const persist = useCallback(async () => {
     setStatus("saving");
@@ -72,6 +76,16 @@ export default function WorkshopEdit() {
     } catch (e) { setJsonErr(e.message); }
   };
 
+  if (loadErr) return (
+    <Layout title="Workshop">
+      <div className="empty">
+        <div className="em-ico">⚠️</div>
+        <div className="em-title">Could not load this workshop</div>
+        <div style={{ fontSize: 13, marginBottom: 12 }}>{loadErr}</div>
+        <button className="btn primary" onClick={() => nav("/workshops")}>← Back to Workshops</button>
+      </div>
+    </Layout>
+  );
   if (!w) return <Layout title="Workshop"><div className="notice">Loading…</div></Layout>;
 
   const cF = (label, path, opts = {}) => <Field label={label} value={getPath(w.content, path)} onChange={(v) => setC(path, v)} {...opts} />;

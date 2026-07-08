@@ -18,7 +18,7 @@ async function register(req, res) {
 
     // Mirror into MongoDB first (best-effort; never throws). This means a lead is
     // captured for the dashboard even if the Sheets write below hiccups.
-    await registrationStore.upsertLead({
+    const storedInDb = await registrationStore.upsertLead({
       regId,
       fullName: b.fullName, mobile: b.mobile, email: b.email, profession: b.profession,
       city: b.city, experience: b.experience, mode: b.mode,
@@ -43,7 +43,15 @@ async function register(req, res) {
       "Source": clean(b.source),
     };
 
-    await sheetService.saveRegistration(reg);
+    // Same policy as verify-payment: the sheet is a mirror. If it hiccups but the
+    // lead IS captured in MongoDB, the visitor must still proceed to payment —
+    // log loudly for reconciliation instead of failing the registration.
+    try {
+      await sheetService.saveRegistration(reg);
+    } catch (err) {
+      if (!storedInDb) throw err; // nothing stored anywhere → real failure
+      console.error("[register] sheet write failed (lead IS in MongoDB):", err.message, { regId });
+    }
     return res.json({ status: "success", regId: regId });
   } catch (err) {
     console.error("[register] error:", err.message);
