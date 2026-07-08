@@ -6,7 +6,16 @@
  */
 const Workshop = require("../models/Workshop");
 const audit = require("../services/audit");
+const workshopSync = require("../services/workshopSync");
 const { clean, slugify } = require("../utils/helpers");
+
+/** Mirror a live active workshop's content into SiteConfig (base + draft) so the
+ *  Content Editor and the composed public config never diverge from it. */
+async function syncIfLive(w) {
+  if (!w.isActive || !w.isLive()) return;
+  try { await workshopSync.pushWorkshopToBase(w); }
+  catch (err) { console.error("[workshops/sync] base sync failed:", err.message); }
+}
 
 /** Ensure a slug is unique (append -2, -3… ), ignoring one id (for updates). */
 async function uniqueSlug(base, ignoreId) {
@@ -79,6 +88,7 @@ async function update(req, res) {
       w.content = b.content; w.markModified("content");
     }
     await w.save();
+    await syncIfLive(w); // live workshop edits are public immediately — keep SiteConfig mirrored
     return res.json({ status: "success", workshop: w });
   } catch (err) {
     console.error("[workshops/update]", err.message);
@@ -114,6 +124,7 @@ async function activate(req, res) {
     await Workshop.updateMany({ _id: { $ne: w._id }, isActive: true }, { $set: { isActive: false } });
     w.isActive = true;
     await w.save();
+    await syncIfLive(w); // the newly active workshop is now what the site serves
     return res.json({ status: "success", workshop: w.summary() });
   } catch (err) {
     console.error("[workshops/activate]", err.message);
@@ -141,7 +152,10 @@ async function setStatus(req, res) {
       if (next === "draft") { w.archivedAt = null; w.scheduledFor = null; }
     }
     await w.save();
-    if (next === "published") await audit.record(req, "workshop.publish", { resource: "workshops", targetId: w._id, newValue: { slug: w.slug, scheduledFor: w.scheduledFor } });
+    if (next === "published") {
+      await syncIfLive(w); // re-publishing the active workshop (e.g. schedule change) can make it live
+      await audit.record(req, "workshop.publish", { resource: "workshops", targetId: w._id, newValue: { slug: w.slug, scheduledFor: w.scheduledFor } });
+    }
     return res.json({ status: "success", workshop: w.summary() });
   } catch (err) {
     console.error("[workshops/setStatus]", err.message);

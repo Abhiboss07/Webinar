@@ -10,11 +10,13 @@ function hostOf(url) {
   try { return new URL(url).hostname; } catch (_) { return ""; }
 }
 
-/** Upsert a pending (or updated) lead. `data` is the browser's form payload. */
+/** Upsert a pending (or updated) lead. `data` is the browser's form payload.
+ *  Returns true when the lead is safely stored (lets callers decide whether a
+ *  later Sheets failure is fatal). */
 async function upsertLead(data) {
   try {
     const regId = String(data.regId || "").trim();
-    if (!regId) return;
+    if (!regId) return false;
     await Registration.updateOne(
       { regId },
       {
@@ -34,8 +36,10 @@ async function upsertLead(data) {
       },
       { upsert: true }
     );
+    return true;
   } catch (err) {
     console.error("[registrationStore.upsertLead] non-fatal:", err.message);
+    return false;
   }
 }
 
