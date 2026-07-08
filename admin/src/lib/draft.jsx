@@ -24,6 +24,7 @@ export function DraftProvider({ children }) {
   const [meta, setMeta] = useState({ publishedAt: null, draftUpdatedAt: null, version: null });
   const latest = useRef(null);
   const timer = useRef(null);
+  const retryAttempt = useRef(0);
 
   const load = useCallback(async () => {
     const r = await api.getDraft();
@@ -45,10 +46,23 @@ export function DraftProvider({ children }) {
     setStatus("saving");
     try {
       const r = await api.saveDraft(latest.current);
+      retryAttempt.current = 0;
       setHasDraft(true);
       setMeta((m) => ({ ...m, draftUpdatedAt: r.draftUpdatedAt }));
       setStatus("saved");
-    } catch (_) { setStatus("error"); }
+    } catch (_) {
+      setStatus("error");
+      // Transient failures (server cold start, brief network drop) must not
+      // strand unsaved edits until the user happens to type again — retry
+      // automatically with capped backoff. A new edit supersedes the retry
+      // (scheduleSave reuses the same timer slot).
+      if (retryAttempt.current < 5) {
+        const delay = Math.min(30000, 4000 * 2 ** retryAttempt.current);
+        retryAttempt.current += 1;
+        clearTimeout(timer.current);
+        timer.current = setTimeout(persist, delay);
+      }
+    }
   }, []);
 
   const scheduleSave = useCallback(() => {

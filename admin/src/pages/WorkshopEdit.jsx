@@ -41,6 +41,7 @@ export default function WorkshopEdit() {
   const [jsonErr, setJsonErr] = useState("");
   const latest = useRef(null);
   const timer = useRef(null);
+  const retryAttempt = useRef(0);
 
   useEffect(() => {
     setLoadErr("");
@@ -57,8 +58,19 @@ export default function WorkshopEdit() {
       // Backend may adjust the slug (uniqueness) — reflect it back.
       setW((cur) => ({ ...cur, slug: r.workshop.slug }));
       latest.current = { ...latest.current, slug: r.workshop.slug };
+      retryAttempt.current = 0;
       setStatus("saved");
-    } catch (e) { setStatus("error"); toast(e.message, "error"); }
+    } catch (e) {
+      setStatus("error"); toast(e.message, "error");
+      // Same transient-failure policy as the Content draft: retry with capped
+      // backoff instead of stranding the edit; a new edit supersedes the retry.
+      if (retryAttempt.current < 5) {
+        const delay = Math.min(30000, 4000 * 2 ** retryAttempt.current);
+        retryAttempt.current += 1;
+        clearTimeout(timer.current);
+        timer.current = setTimeout(persist, delay);
+      }
+    }
   }, [id, toast]);
 
   const schedule = useCallback(() => {

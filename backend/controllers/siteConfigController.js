@@ -41,11 +41,13 @@ async function resolveWorkshop(slug) {
   });
 }
 
-/** Overlay a workshop's content on the base (per top-level key), preserving
- *  the site-wide section manifest. Only keys the workshop defines are overridden. */
+/** Overlay a workshop's content on the base, preserving the site-wide section
+ *  manifest. Deep merge: only the fields the workshop actually defines are
+ *  overridden — a partial object (e.g. hero without `facts`) must not gut the
+ *  complete base object the section renderers require. */
 function compose(base, workshop) {
   if (!workshop || !isPlainObject(workshop.content)) return base;
-  return { ...base, ...workshop.content, sections: base.sections };
+  return { ...workshopSync.deepMerge(base, workshop.content), sections: base.sections };
 }
 
 /** Public: published content (or draft when ?preview=1), with the active/previewed

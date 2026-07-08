@@ -9,7 +9,7 @@ const SAVER = {
   saved: ["saved", "All changes saved to draft"],
   dirty: ["dirty", "Unsaved changes…"],
   saving: ["saving", "Saving…"],
-  error: ["", "Save failed — retrying on next edit"],
+  error: ["", "Save failed — retrying automatically…"],
 };
 
 function timeAgo(d) {
